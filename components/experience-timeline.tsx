@@ -3,100 +3,27 @@
 import { Section } from "@/components/section"
 import { Container } from "@/components/container"
 import { MapPin, Calendar } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-
-interface ExperienceItem {
-  role: string
-  company: string
-  location: string
-  startDate: string
-  endDate: string
-  workingStyle: string
-  description: string[]
-}
-
-const experiences: ExperienceItem[] = [
-  {
-    role: "Fullstack AI Engineer",
-    company: "Kazokku | Tukar.ai",
-    location: "Brunei",
-    startDate: "Jul 2025",
-    endDate: "Sep 2025",
-    workingStyle: "Full-time",
-    description: [
-      "Architected and developed AI-powered mobile app (React Native) with NestJS backend and custom ML engine using Python + FastAPI",
-      "Designed end-to-end system workflow including prompt routing and model engine orchestration",
-    ],
-  },
-  {
-    role: "Fullstack Engineer",
-    company: "PT. Aira Teknologi Indonesia | Bikinkonten.ai",
-    location: "Malang, Indonesia",
-    startDate: "Apr 2025",
-    endDate: "Present",
-    workingStyle: "Full-time",
-    description: [
-      "Architected and developed B2B features for AI content generation platform",
-      "Integrated Google Gemini API for text, image, and video generation workflows",
-    ],
-  },
-  {
-    role: "Fullstack Engineer",
-    company: "Ekata Tech Indonesia",
-    location: "Malang, Indonesia",
-    startDate: "Apr 2025",
-    endDate: "Present",
-    workingStyle: "Full-time",
-    description: [
-      "Developed and deployed RESTful APIs, increasing performance by ~30% through optimized database structure and backend logic",
-      "Implemented scalable backend architecture and CI/CD pipelines",
-    ],
-  },
-  {
-    role: "Fullstack Engineer",
-    company: "Tenang AI",
-    location: "Yogyakarta, Indonesia",
-    startDate: "Aug 2024",
-    endDate: "Oct 2024",
-    workingStyle: "Full-time",
-    description: [
-      "Designed full system architecture and database schema",
-      "Applied island architecture and optimized UI rendering → improved page performance by ~85%",
-      "Implemented advanced image optimization → significantly reduced initial load time",
-    ],
-  },
-  {
-    role: "Software Engineer Intern",
-    company: "Zegasoft",
-    location: "South Jakarta, Indonesia",
-    startDate: "Mar 2024",
-    endDate: "Nov 2024",
-    workingStyle: "Internship",
-    description: [
-      "Implemented Firebase Auth & Storage in React Native app",
-      "Designed PostgreSQL schema, boosting query speed by ~25%",
-      "Documented APIs, improving frontend development efficiency by ~15%",
-    ],
-  },
-  {
-    role: "Frontend Developer Intern",
-    company: "Core Initiative Studio",
-    location: "Depok, Indonesia",
-    startDate: "Aug 2023",
-    endDate: "Sep 2024",
-    workingStyle: "Internship",
-    description: [
-      "Built interactive e-commerce pages using Vue.js",
-      "Enhanced UX through smooth API-driven UI and dynamic product interaction",
-    ],
-  },
-]
+import { Experience } from "@/lib/schemas"
+import { useExperience } from "@/hooks/use-experience"
+import { extractStrings } from "@/lib/utils"
 
 export function ExperienceTimeline() {
   const [showAll, setShowAll] = useState(false)
-  const displayedExperiences = showAll ? experiences : experiences.slice(0, 3)
+
+  // experimental real setup
+  const [exps, setExps] = useState<Experience[] | []>([])
+
+  const { getAll } = useExperience();
+
+  useEffect(() => {
+    getAll().then((res) => {
+      setExps(res)
+    })
+  }, [])
+
 
   return (
     <Section id="experience">
@@ -111,9 +38,9 @@ export function ExperienceTimeline() {
         {/* Timeline */}
         <div className="space-y-8">
           <AnimatePresence>
-            {displayedExperiences.map((exp, index) => (
+            {exps?.slice(0, showAll ? exps.length : 3).map((exp, index) => (
               <motion.div
-                key={`${exp.company}-${exp.role}`}
+                key={`${exp.company}-${exp.title}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -121,7 +48,7 @@ export function ExperienceTimeline() {
                 className="relative pl-8 pb-8"
               >
                 {/* Timeline line */}
-                {index !== displayedExperiences.length - 1 && (
+                {index !== exps?.length - 1 && (
                   <div className="absolute left-3 top-8 w-0.5 h-24 bg-border" />
                 )}
 
@@ -133,7 +60,7 @@ export function ExperienceTimeline() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                     <div>
                       <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
-                        {exp.role}
+                        {exp.title}
                       </h3>
                       <p className="text-primary font-medium">{exp.company}</p>
                     </div>
@@ -150,12 +77,12 @@ export function ExperienceTimeline() {
                       {exp.location}
                     </div>
                     <div className="hidden sm:block">•</div>
-                    <div>{exp.workingStyle}</div>
+                    <div>{exp.workStyle}</div>
                   </div>
 
                   {/* Description */}
                   <ul className="space-y-2">
-                    {exp.description.map((desc, i) => (
+                    {exp?.description && exp?.description.map((desc, i) => (
                       <li key={i} className="text-muted-foreground text-sm flex gap-3">
                         <span className="text-primary mt-1">→</span>
                         <span>{desc}</span>
@@ -168,7 +95,7 @@ export function ExperienceTimeline() {
           </AnimatePresence>
         </div>
 
-        {!showAll && experiences.length > 3 && (
+        {!showAll && exps && exps?.length > 2 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
