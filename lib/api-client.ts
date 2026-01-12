@@ -1,6 +1,8 @@
 interface ApiResponse<T> {
   success: boolean
-  data?: T
+  data?: {
+    data?: T
+  }
   error?: string
   message?: string
 }
@@ -10,12 +12,12 @@ interface ApiError {
   status: number
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1"
 
 export class ApiClient {
   private static instance: ApiClient
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): ApiClient {
     if (!ApiClient.instance) {
@@ -27,21 +29,20 @@ export class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
       const url = `${API_BASE_URL}${endpoint}`
+      console.log('url', url, API_BASE_URL)
       const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
 
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-        ...options.headers,
-      }
+      const headers = options?.headers ? new Headers(options.headers) : new Headers();
 
       if (token) {
-        headers.Authorization = `Bearer ${token}`
+        headers.set("Authorization", `Bearer ${token}`)
       }
 
       const response = await fetch(url, {
         ...options,
         headers,
       })
+      console.log('rsp', response)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))

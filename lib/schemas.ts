@@ -27,7 +27,8 @@ export const experienceSchema = z.object({
   workStyle: z.enum(["Full-time", "Part-time", "Contract", "Freelance"], {
     errorMap: () => ({ message: "Please select a valid work style" }),
   }),
-  description: z.string().min(1, "Description is required").max(500, "Description must be less than 500 characters"),
+  // description: z.array(z.string()).min(1, "Description is required").max(500, "Description must be less than 500 characters").default([]),
+  description: z.string(),
   accomplishments: z.array(z.string()).default([]),
   order: z.number().default(0),
 })

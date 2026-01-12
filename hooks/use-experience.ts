@@ -17,11 +17,12 @@ export function useExperience(options?: UseExperienceOptions) {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await apiClient.get<Experience[]>("/experience")
+      const response = await apiClient.get<Experience[]>("/experiences")
+      console.log(response?.data?.data)
       if (!response.success) {
         throw new Error(response.error || "Failed to fetch experience items")
       }
-      return response.data || []
+      return response?.data?.data || []
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to fetch experience items"
       setError(message)
@@ -37,7 +38,7 @@ export function useExperience(options?: UseExperienceOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.get<Experience>(`/experience/${id}`)
+        const response = await apiClient.get<Experience>(`/experiences/${id}`)
         if (!response.success) {
           throw new Error(response.error || "Failed to fetch experience item")
         }
@@ -59,7 +60,7 @@ export function useExperience(options?: UseExperienceOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.post<Experience>("/experience", data)
+        const response = await apiClient.post<Experience>("/experiences", data)
         if (!response.success) {
           throw new Error(response.error || "Failed to create experience item")
         }
@@ -82,7 +83,7 @@ export function useExperience(options?: UseExperienceOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.put<Experience>(`/experience/${id}`, data)
+        const response = await apiClient.put<Experience>(`/experiences/${id}`, data)
         if (!response.success) {
           throw new Error(response.error || "Failed to update experience item")
         }
@@ -105,7 +106,7 @@ export function useExperience(options?: UseExperienceOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.delete<{ success: boolean }>(`/experience/${id}`)
+        const response = await apiClient.delete<{ success: boolean }>(`/experiences/${id}`)
         if (!response.success) {
           throw new Error(response.error || "Failed to delete experience item")
         }
