@@ -1,0 +1,59 @@
+export interface Portfolio {
+  id: string
+  title: string
+  description: string
+  image?: string
+  techStacks: string[]
+  liveUrl?: string
+  repositoryUrl?: string
+  featured: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface Experience {
+  id: string
+  role: string
+  company: string
+  location: string
+  startDate: Date
+  endDate?: Date
+  current: boolean
+  workStyle: string
+  accomplishments: string[]
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface BlogPost {
+  id: string
+  slug: string
+  title: string
+  excerpt: string
+  content: string
+  coverImage?: string
+  tags: string[]
+  published: boolean
+  publishedAt?: Date
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface TechStack {
+  id: string
+  name: string
+  category: "frontend" | "backend" | "design" | "devops"
+  icon?: string
+  proficiency: "beginner" | "intermediate" | "advanced" | "expert"
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface AdminUser {
+  id: string
+  email: string
+  password: string
+  role: "admin" | "editor"
+  createdAt: Date
+  updatedAt: Date
+}

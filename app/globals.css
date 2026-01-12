@@ -1,0 +1,260 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Updated design tokens to match minimalist aesthetic with navy and cyan accents */
+:root {
+  --background: oklch(0.98 0 0);
+  --foreground: oklch(0.15 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0 0);
+  --primary: oklch(0.35 0.12 250);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.55 0.18 200);
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.94 0 0);
+  --muted-foreground: oklch(0.45 0 0);
+  --accent: oklch(0.55 0.2 200);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.577 0.245 27.325);
+  --border: oklch(0.93 0 0);
+  --input: oklch(0.93 0 0);
+  --ring: oklch(0.55 0.15 200);
+  --chart-1: oklch(0.55 0.18 200);
+  --chart-2: oklch(0.35 0.12 250);
+  --chart-3: oklch(0.65 0.12 280);
+  --chart-4: oklch(0.45 0.15 240);
+  --chart-5: oklch(0.6 0.15 210);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.98 0 0);
+  --sidebar-foreground: oklch(0.15 0 0);
+  --sidebar-primary: oklch(0.35 0.12 250);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.55 0.18 200);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.93 0 0);
+  --sidebar-ring: oklch(0.55 0.15 200);
+}
+
+.dark {
+  --background: oklch(0.12 0 0);
+  --foreground: oklch(0.95 0 0);
+  --card: oklch(0.18 0 0);
+  --card-foreground: oklch(0.95 0 0);
+  --popover: oklch(0.18 0 0);
+  --popover-foreground: oklch(0.95 0 0);
+  --primary: oklch(0.65 0.15 200);
+  --primary-foreground: oklch(0.12 0 0);
+  --secondary: oklch(0.55 0.18 200);
+  --secondary-foreground: oklch(0.12 0 0);
+  --muted: oklch(0.3 0 0);
+  --muted-foreground: oklch(0.65 0 0);
+  --accent: oklch(0.65 0.2 200);
+  --accent-foreground: oklch(0.12 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.25 0 0);
+  --input: oklch(0.25 0 0);
+  --ring: oklch(0.65 0.15 200);
+  --chart-1: oklch(0.65 0.18 200);
+  --chart-2: oklch(0.7 0.15 250);
+  --chart-3: oklch(0.75 0.12 280);
+  --chart-4: oklch(0.6 0.15 240);
+  --chart-5: oklch(0.68 0.15 210);
+  --sidebar: oklch(0.15 0 0);
+  --sidebar-foreground: oklch(0.95 0 0);
+  --sidebar-primary: oklch(0.65 0.15 200);
+  --sidebar-primary-foreground: oklch(0.12 0 0);
+  --sidebar-accent: oklch(0.55 0.18 200);
+  --sidebar-accent-foreground: oklch(0.12 0 0);
+  --sidebar-border: oklch(0.25 0 0);
+  --sidebar-ring: oklch(0.65 0.15 200);
+}
+
+@theme inline {
+  --font-sans: "Work Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: calc(var(--radius));
+  --radius-lg: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Added elegant typography with proper line height and letter spacing */
+  h1 {
+    @apply text-4xl md:text-5xl font-bold leading-tight tracking-tight;
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl font-bold leading-tight tracking-tight;
+  }
+
+  h3 {
+    @apply text-2xl font-semibold leading-snug tracking-tight;
+  }
+
+  p {
+    @apply leading-relaxed text-base;
+  }
+}
+
+@layer utilities {
+  .glow-primary {
+    @apply transition-all duration-300;
+  }
+
+  .glow-primary:hover {
+    box-shadow: 0 0 20px rgba(86, 152, 232, 0.4), 0 0 40px rgba(86, 152, 232, 0.2);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-in;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Added spin keyframe for animated hero component */
+  @keyframes spin {
+    from {
+      transform: rotate(360deg);
+    }
+    to {
+      transform: rotate(0deg);
+    }
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .filter-fade-in {
+    animation: filterFadeIn 0.3s ease-out;
+  }
+
+  .filter-fade-out {
+    animation: filterFadeOut 0.2s ease-in;
+  }
+
+  .scale-enter {
+    animation: scaleEnter 0.2s ease-out;
+  }
+
+  @keyframes filterFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes filterFadeOut {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+
+  @keyframes scaleEnter {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+    background: linear-gradient(90deg, var(--muted) 25%, var(--muted-foreground) 50%, var(--muted) 75%);
+    background-size: 1000px 100%;
+  }
+}
