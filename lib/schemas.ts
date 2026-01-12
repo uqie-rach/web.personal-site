@@ -27,8 +27,8 @@ export const experienceSchema = z.object({
   workStyle: z.enum(["Full-time", "Part-time", "Contract", "Freelance"], {
     errorMap: () => ({ message: "Please select a valid work style" }),
   }),
-  // description: z.array(z.string()).min(1, "Description is required").max(500, "Description must be less than 500 characters").default([]),
-  description: z.string(),
+  description: z.array(z.string()).min(1, "Description is required").max(500, "Description must be less than 500 characters").default([]),
+  // description: z.string(),
   accomplishments: z.array(z.string()).default([]),
   order: z.number().default(0),
 })
@@ -43,10 +43,11 @@ export const blogSchema = z.object({
     .string()
     .min(1, "Slug is required")
     .regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens"),
-  excerpt: z.string().min(1, "Excerpt is required").max(200, "Excerpt must be less than 200 characters"),
+  excerpt: z.string().optional(),
+  description: z.string().min(1, "Description is required").max(200, "Description must be less than 200 characters"),
   content: z.string().min(1, "Content is required").max(50000, "Content must be less than 50000 characters"),
   coverImage: z.string().min(1, "Cover image is required"),
-  tags: z.array(z.string()).min(1, "At least one tag is required"),
+  tags: z.string().min(1, "At least one tag is required"),
   published: z.boolean().default(false),
   publishedAt: z.string().optional(),
   order: z.number().default(0),
