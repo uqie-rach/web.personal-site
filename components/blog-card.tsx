@@ -6,12 +6,12 @@ interface BlogCardProps {
   slug: string
   title: string
   description: string
-  timestamp: string
+  publishedAt?: string
   readTime?: number
   category?: string
 }
 
-export function BlogCard({ slug, title, description, timestamp, readTime = 5, category }: BlogCardProps) {
+export function BlogCard({ slug, title, description, publishedAt, readTime = 5, category }: BlogCardProps) {
   return (
     <Link href={`/blog/${slug}`}>
       <article className="group cursor-pointer p-6 rounded-lg border border-border bg-card hover:bg-muted/50 transition-all duration-300 hover:border-primary/50 hover:shadow-md">
@@ -34,7 +34,7 @@ export function BlogCard({ slug, title, description, timestamp, readTime = 5, ca
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Calendar size={14} />
-                {timestamp}
+                {publishedAt}
               </div>
               <div>{readTime} min read</div>
             </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Section } from "@/components/section"
@@ -10,6 +10,8 @@ import { ErrorBoundary } from "@/components/error-boundary"
 import { PageTransition } from "@/components/page-transition"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { useBlog } from "@/hooks/use-blog"
+import { Blog } from "@/lib/schemas"
 
 interface BlogPost {
   slug: string
@@ -21,114 +23,39 @@ interface BlogPost {
   categorySlug: string
 }
 
-const allBlogPosts: BlogPost[] = [
-  {
-    slug: "building-scalable-applications",
-    title: "Building Scalable Applications with Next.js",
-    description:
-      "A comprehensive guide to architecting performant web applications. Learn about server components, caching strategies, and optimization techniques.",
-    timestamp: "Dec 15, 2024",
-    readTime: 8,
-    category: "Performance",
-    categorySlug: "performance",
-  },
-  {
-    slug: "react-performance-optimization",
-    title: "React Performance Optimization Tips",
-    description:
-      "Discover practical techniques to improve your React app performance. From memo to useDeferredValue, understand the tools available to developers.",
-    timestamp: "Dec 10, 2024",
-    readTime: 6,
-    category: "React",
-    categorySlug: "react",
-  },
-  {
-    slug: "typescript-best-practices",
-    title: "TypeScript Best Practices in 2024",
-    description:
-      "Master TypeScript with industry best practices. Type safety, error handling, and advanced typing patterns for production applications.",
-    timestamp: "Dec 1, 2024",
-    readTime: 10,
-    category: "TypeScript",
-    categorySlug: "typescript",
-  },
-  {
-    slug: "css-grid-layouts",
-    title: "Mastering CSS Grid Layouts",
-    description:
-      "Learn how to create complex responsive layouts with CSS Grid. Examples range from simple grids to sophisticated multi-column designs.",
-    timestamp: "Nov 25, 2024",
-    readTime: 7,
-    category: "CSS",
-    categorySlug: "css",
-  },
-  {
-    slug: "api-design-patterns",
-    title: "RESTful API Design Patterns",
-    description:
-      "Best practices for designing robust and maintainable REST APIs. Cover versioning, error handling, authentication, and documentation.",
-    timestamp: "Nov 18, 2024",
-    readTime: 9,
-    category: "Backend",
-    categorySlug: "backend",
-  },
-  {
-    slug: "web-accessibility",
-    title: "Building Accessible Web Experiences",
-    description:
-      "A guide to creating inclusive web applications. ARIA, semantic HTML, keyboard navigation, and testing for accessibility compliance.",
-    timestamp: "Nov 10, 2024",
-    readTime: 8,
-    category: "Accessibility",
-    categorySlug: "accessibility",
-  },
-  {
-    slug: "nextjs-server-actions",
-    title: "Mastering Next.js Server Actions",
-    description:
-      "Deep dive into Next.js Server Actions for handling form submissions and mutations. Learn about error handling and best practices.",
-    timestamp: "Nov 5, 2024",
-    readTime: 7,
-    category: "Next.js",
-    categorySlug: "nextjs",
-  },
-  {
-    slug: "tailwind-css-advanced",
-    title: "Advanced Tailwind CSS Techniques",
-    description:
-      "Explore advanced Tailwind CSS features including custom utilities, plugin development, and performance optimization strategies.",
-    timestamp: "Oct 28, 2024",
-    readTime: 8,
-    category: "CSS",
-    categorySlug: "css",
-  },
-]
-
-const allCategories = Array.from(new Set(allBlogPosts.map((p) => p.category)))
-  .map((cat) => ({
-    label: cat,
-    slug: allBlogPosts.find((p) => p.category === cat)?.categorySlug || cat.toLowerCase(),
-  }))
-  .sort((a, b) => a.label.localeCompare(b.label))
-
 const POSTS_PER_PAGE = 6
 
 export default function BlogPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [allCategories, setAllCategories] = useState<string[] | []>([]);
+  const [blogs, setBlogs] = useState<Blog[] | []>([])
+
+  const { getAll } = useBlog()
 
   const filteredPosts = useMemo(() => {
-    return allBlogPosts.filter((post) => {
+    console.log(blogs)
+    return blogs.filter((post) => {
       const matchesSearch =
         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         post.description.toLowerCase().includes(searchQuery.toLowerCase())
 
-      const matchesCategory = !selectedCategory || post.categorySlug === selectedCategory
+      const matchesCategory = !selectedCategory || post.tags.toLowerCase() === selectedCategory
 
+      console.log(matchesSearch, matchesCategory)
       return matchesSearch && matchesCategory
     })
-  }, [searchQuery, selectedCategory])
+  }, [searchQuery, selectedCategory, blogs])
+
+  useEffect(() => {
+    getAll()
+      .then(res => {
+        setBlogs(res)
+        setAllCategories(res.map(r => r.tags))
+        // setSelectedCategory(null)
+      })
+  }, [])
 
   const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE)
   const paginatedPosts = filteredPosts.slice((currentPage - 1) * POSTS_PER_PAGE, currentPage * POSTS_PER_PAGE)
@@ -191,30 +118,30 @@ export default function BlogPage() {
                         setSelectedCategory(null)
                         setCurrentPage(1)
                       }}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                        !selectedCategory
-                          ? "bg-primary text-primary-foreground shadow-md"
-                          : "bg-secondary/20 text-foreground hover:bg-secondary/40"
-                      }`}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${!selectedCategory
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "bg-secondary/20 text-foreground hover:bg-secondary/40"
+                        }`}
                     >
                       All Posts
                     </button>
-                    {allCategories.map((cat) => (
-                      <button
-                        key={cat.slug}
-                        onClick={() => {
-                          setSelectedCategory(cat.slug)
-                          setCurrentPage(1)
-                        }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                          selectedCategory === cat.slug
+                    {allCategories && allCategories.map((cat) => {
+                      return (
+                        <button
+                          key={cat.toLowerCase()}
+                          onClick={() => {
+                            setSelectedCategory(cat.toLowerCase())
+                            setCurrentPage(1)
+                          }}
+                          className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${selectedCategory === cat.toLowerCase()
                             ? "bg-primary text-primary-foreground shadow-md"
                             : "bg-secondary/20 text-foreground hover:bg-secondary/40"
-                        }`}
-                      >
-                        {cat.label}
-                      </button>
-                    ))}
+                            }`}
+                        >
+                          {cat}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 

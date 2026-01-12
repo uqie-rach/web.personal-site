@@ -17,11 +17,11 @@ export function useBlog(options?: UseBlogOptions) {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await apiClient.get<Blog[]>("/blog")
+      const response = await apiClient.get<Blog[]>("/blogs")
       if (!response.success) {
         throw new Error(response.error || "Failed to fetch blog posts")
       }
-      return response.data || []
+      return response?.data?.data || []
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to fetch blog posts"
       setError(message)
@@ -37,11 +37,11 @@ export function useBlog(options?: UseBlogOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.get<Blog>(`/blog/${id}`)
+        const response = await apiClient.get<Blog>(`/blogs/${id}`)
         if (!response.success) {
           throw new Error(response.error || "Failed to fetch blog post")
         }
-        return response.data
+        return response?.data?.data
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to fetch blog post"
         setError(message)
@@ -59,12 +59,12 @@ export function useBlog(options?: UseBlogOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.post<Blog>("/blog", data)
+        const response = await apiClient.post<Blog>("/blogs", data)
         if (!response.success) {
           throw new Error(response.error || "Failed to create blog post")
         }
         options?.onSuccess?.("Blog post created successfully")
-        return response.data
+        return response?.data?.data
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to create blog post"
         setError(message)
@@ -82,12 +82,12 @@ export function useBlog(options?: UseBlogOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.put<Blog>(`/blog/${id}`, data)
+        const response = await apiClient.put<Blog>(`/blogs/${id}`, data)
         if (!response.success) {
           throw new Error(response.error || "Failed to update blog post")
         }
         options?.onSuccess?.("Blog post updated successfully")
-        return response.data
+        return response?.data?.data
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to update blog post"
         setError(message)
@@ -105,7 +105,7 @@ export function useBlog(options?: UseBlogOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.delete<{ success: boolean }>(`/blog/${id}`)
+        const response = await apiClient.delete<{ success: boolean }>(`/blogs/${id}`)
         if (!response.success) {
           throw new Error(response.error || "Failed to delete blog post")
         }
