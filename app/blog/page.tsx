@@ -35,7 +35,6 @@ export default function BlogPage() {
   const { getAll } = useBlog()
 
   const filteredPosts = useMemo(() => {
-    console.log(blogs)
     return blogs.filter((post) => {
       const matchesSearch =
         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
