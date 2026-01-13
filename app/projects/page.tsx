@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Section } from "@/components/section"
@@ -10,89 +10,39 @@ import { ErrorBoundary } from "@/components/error-boundary"
 import { PageTransition } from "@/components/page-transition"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-
-interface Project {
-  title: string
-  description: string
-  techStacks: string[]
-  liveUrl: string
-  repositoryUrl: string
-  featured?: boolean
-}
-
-const allProjects: Project[] = [
-  {
-    title: "E-Commerce Platform",
-    description:
-      "A full-stack e-commerce platform with real-time inventory management, payment processing, and admin dashboard. Built with Next.js and PostgreSQL.",
-    techStacks: ["Next.js", "React", "TypeScript", "PostgreSQL", "Stripe"],
-    liveUrl: "#",
-    repositoryUrl: "#",
-    featured: true,
-  },
-  {
-    title: "Task Management App",
-    description: "Collaborative task management tool with real-time updates, team workspaces, and detailed analytics.",
-    techStacks: ["React", "Firebase", "Tailwind CSS"],
-    liveUrl: "#",
-    repositoryUrl: "#",
-  },
-  {
-    title: "Design System",
-    description: "Comprehensive component library with documentation, built with React and Storybook.",
-    techStacks: ["React", "Storybook", "TypeScript"],
-    repositoryUrl: "#",
-  },
-  {
-    title: "Analytics Dashboard",
-    description: "Real-time analytics dashboard with interactive charts and customizable widgets.",
-    techStacks: ["Next.js", "Recharts", "Tailwind CSS"],
-    liveUrl: "#",
-  },
-  {
-    title: "Mobile App",
-    description: "Cross-platform mobile application for fitness tracking with social features.",
-    techStacks: ["React Native", "Firebase", "Redux"],
-    repositoryUrl: "#",
-  },
-  {
-    title: "CMS Platform",
-    description: "Headless CMS with rich content editing, version control, and API-first architecture.",
-    techStacks: ["Node.js", "MongoDB", "GraphQL"],
-    liveUrl: "#",
-  },
-  {
-    title: "AI Chat Application",
-    description: "Real-time chat application with AI-powered suggestions and natural language processing.",
-    techStacks: ["Next.js", "OpenAI", "WebSocket", "Prisma"],
-    liveUrl: "#",
-    repositoryUrl: "#",
-  },
-  {
-    title: "Social Media Dashboard",
-    description: "Unified dashboard for managing multiple social media accounts with scheduling and analytics.",
-    techStacks: ["React", "Redux", "D3.js", "Node.js"],
-    liveUrl: "#",
-  },
-]
-
-const allTechStacks = Array.from(new Set(allProjects.flatMap((p) => p.techStacks))).sort()
+import { usePortfolio } from "@/hooks/use-portfolio"
+import { Portfolio } from "@/lib/schemas"
 
 export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTechs, setSelectedTechs] = useState<string[]>([])
+  const [allTechs, setAllTechs] = useState<string[] | []>([])
+  const [projects, setProjects] = useState<Portfolio[] | []>([])
+
+  const { getAll } = usePortfolio();
+
+  useEffect(() => {
+    getAll()
+      .then(res => {
+        const tempTechs = [...new Set(res.map(r => r.technologies).flat())]
+        
+        setProjects(res)
+        setAllTechs(tempTechs)
+      })
+  }, [])
+
 
   const filteredProjects = useMemo(() => {
-    return allProjects.filter((project) => {
+    return projects.filter((project) => {
       const matchesSearch =
         project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.description.toLowerCase().includes(searchQuery.toLowerCase())
 
-      const matchesTech = selectedTechs.length === 0 || selectedTechs.some((tech) => project.techStacks.includes(tech))
+      const matchesTech = selectedTechs.length === 0 || selectedTechs.some((tech) => project.technologies.includes(tech))
 
       return matchesSearch && matchesTech
     })
-  }, [searchQuery, selectedTechs])
+  }, [searchQuery, selectedTechs, projects])
 
   const toggleTech = (tech: string) => {
     setSelectedTechs((prev) => (prev.includes(tech) ? prev.filter((t) => t !== tech) : [...prev, tech]))
@@ -145,15 +95,14 @@ export default function ProjectsPage() {
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {allTechStacks.map((tech) => (
+                    {allTechs && allTechs.map((tech) => (
                       <button
                         key={tech}
                         onClick={() => toggleTech(tech)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                          selectedTechs.includes(tech)
-                            ? "bg-primary text-primary-foreground shadow-md"
-                            : "bg-secondary/20 text-foreground hover:bg-secondary/40"
-                        }`}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${selectedTechs.includes(tech)
+                          ? "bg-primary text-primary-foreground shadow-md"
+                          : "bg-secondary/20 text-foreground hover:bg-secondary/40"
+                          }`}
                       >
                         {tech}
                       </button>

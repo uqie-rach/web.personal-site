@@ -6,7 +6,7 @@ interface PortfolioCardProps {
   title: string
   description: string
   image?: string
-  techStacks: string[]
+  technologies: string[]
   liveUrl?: string
   repositoryUrl?: string
   featured?: boolean
@@ -15,11 +15,12 @@ interface PortfolioCardProps {
 export function PortfolioCard({
   title,
   description,
-  techStacks,
+  technologies,
   liveUrl,
   repositoryUrl,
   featured = false,
 }: PortfolioCardProps) {
+
   return (
     <div
       className={`group relative overflow-hidden rounded-lg border border-border bg-card hover:bg-muted/50 transition-all duration-300 hover:border-primary/50 hover:shadow-md ${
@@ -40,7 +41,7 @@ export function PortfolioCard({
 
         {/* Tech Stack Tags */}
         <div className="flex flex-wrap gap-2 mb-6 mt-auto">
-          {techStacks.map((tech) => (
+          {technologies && technologies.map((tech) => (
             <span
               key={tech}
               className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full"

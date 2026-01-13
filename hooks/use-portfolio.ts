@@ -17,11 +17,11 @@ export function usePortfolio(options?: UsePortfolioOptions) {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await apiClient.get<Portfolio[]>("/portfolio")
+      const response = await apiClient.get<Portfolio[]>("/portfolios")
       if (!response.success) {
         throw new Error(response.error || "Failed to fetch portfolio items")
       }
-      return response.data || []
+      return response?.data?.data || []
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to fetch portfolio items"
       setError(message)
@@ -37,11 +37,11 @@ export function usePortfolio(options?: UsePortfolioOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.get<Portfolio>(`/portfolio/${id}`)
+        const response = await apiClient.get<Portfolio>(`/portfolios/${id}`)
         if (!response.success) {
           throw new Error(response.error || "Failed to fetch portfolio item")
         }
-        return response.data
+        return response?.data?.data
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to fetch portfolio item"
         setError(message)
@@ -59,12 +59,12 @@ export function usePortfolio(options?: UsePortfolioOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.post<Portfolio>("/portfolio", data)
+        const response = await apiClient.post<Portfolio>("/portfolios", data)
         if (!response.success) {
           throw new Error(response.error || "Failed to create portfolio item")
         }
         options?.onSuccess?.("Portfolio item created successfully")
-        return response.data
+        return response?.data?.data
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to create portfolio item"
         setError(message)
@@ -82,12 +82,12 @@ export function usePortfolio(options?: UsePortfolioOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.put<Portfolio>(`/portfolio/${id}`, data)
+        const response = await apiClient.put<Portfolio>(`/portfolios/${id}`, data)
         if (!response.success) {
           throw new Error(response.error || "Failed to update portfolio item")
         }
         options?.onSuccess?.("Portfolio item updated successfully")
-        return response.data
+        return response?.data?.data
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to update portfolio item"
         setError(message)
@@ -105,7 +105,7 @@ export function usePortfolio(options?: UsePortfolioOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.delete<{ success: boolean }>(`/portfolio/${id}`)
+        const response = await apiClient.delete<{ success: boolean }>(`/portfolios/${id}`)
         if (!response.success) {
           throw new Error(response.error || "Failed to delete portfolio item")
         }
