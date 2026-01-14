@@ -1,92 +1,108 @@
-interface ApiResponse<T> {
-  success: boolean
-  data?: {
-    data?: T
-  }
-  error?: string
-  message?: string
+import { normalizeResponse } from "./normalize-response"
+
+export interface ApiSuccess<T> {
+  ok: true
+  data: T
+  meta?: Record<string, any>
 }
 
-interface ApiError {
+export interface ApiFailure {
+  ok: false
   message: string
-  status: number
+  status?: number
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1"
+export function isSuccess<T>(
+  res: ApiResult<T>
+): res is { ok: true; data: T; meta?: any } {
+  return res.ok === true
+}
+
+
+export type ApiResult<T> = ApiSuccess<T> | ApiFailure
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1'
 
 export class ApiClient {
   private static instance: ApiClient
+  private constructor() {}
 
-  private constructor() { }
-
-  static getInstance(): ApiClient {
-    if (!ApiClient.instance) {
-      ApiClient.instance = new ApiClient()
-    }
-    return ApiClient.instance
+  static getInstance() {
+    if (!this.instance) this.instance = new ApiClient()
+    return this.instance
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<ApiResult<T>> {
+    const headers = new Headers(options.headers)
+
+    if (options.body) {
+      headers.set('Content-Type', 'application/json')
+    }
+
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('auth_token')
+        : null
+
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`)
+    }
+
     try {
-      const url = `${API_BASE_URL}${endpoint}`
-      console.log('url', url, API_BASE_URL)
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
-
-      const headers = options?.headers ? new Headers(options.headers) : new Headers();
-
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`)
-      }
-
-      const response = await fetch(url, {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers,
       })
-      console.log('rsp', response)
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw {
-          message: errorData.error || `HTTP Error: ${response.status}`,
-          status: response.status,
-        } as ApiError
+      const raw = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        return {
+          ok: false,
+          message: raw?.message || 'Request failed',
+          status: res.status,
+        }
       }
 
-      const data = await response.json()
+      const normalized = normalizeResponse<T>(raw)
+
       return {
-        success: true,
-        data,
+        ok: true,
+        ...normalized,
       }
-    } catch (error) {
-      const apiError = error instanceof Error ? error.message : "Unknown error"
-      console.error("[API Error]", apiError)
+    } catch (err) {
       return {
-        success: false,
-        error: apiError,
+        ok: false,
+        message:
+          err instanceof Error ? err.message : 'Unknown error',
       }
     }
   }
 
-  get<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { method: "GET" })
+  get<T>(endpoint: string) {
+    return this.request<T>(endpoint, { method: 'GET' })
   }
 
-  post<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+  post<T>(endpoint: string, body?: unknown) {
     return this.request<T>(endpoint, {
-      method: "POST",
+      method: 'POST',
       body: body ? JSON.stringify(body) : undefined,
     })
   }
 
-  put<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+  put<T>(endpoint: string, body?: unknown) {
     return this.request<T>(endpoint, {
-      method: "PUT",
+      method: 'PUT',
       body: body ? JSON.stringify(body) : undefined,
     })
   }
 
-  delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { method: "DELETE" })
+  delete<T>(endpoint: string) {
+    return this.request<T>(endpoint, { method: 'DELETE' })
   }
 }
 

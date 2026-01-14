@@ -57,3 +57,35 @@ export interface AdminUser {
   createdAt: Date
   updatedAt: Date
 }
+
+export interface LoginResponse {
+  refreshToken: string
+  token: string
+  tokenExpires: string
+  user: User
+}
+
+export interface User {
+  id: string
+  email: string
+  provider: string
+  socialId: string
+  firstName: string
+  lastName: string
+  role: Role
+  status: Status
+  createdAt: Date
+  updatedAt: Date
+  deletedAt: Date | null
+  portfolios: PortfolioSchema[]
+}
+
+export interface Role {
+  id: string
+  name: string
+}
+
+export interface Status {
+  id: string
+  name: string
+}
