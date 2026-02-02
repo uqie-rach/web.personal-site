@@ -26,7 +26,7 @@ const API_BASE_URL =
 
 export class ApiClient {
   private static instance: ApiClient
-  private constructor() {}
+  private constructor() { }
 
   static getInstance() {
     if (!this.instance) this.instance = new ApiClient()
@@ -38,8 +38,9 @@ export class ApiClient {
     options: RequestInit = {}
   ): Promise<ApiResult<T>> {
     const headers = new Headers(options.headers)
+    const body = options.body
 
-    if (options.body) {
+    if (body && !isFormData(body)) {
       headers.set('Content-Type', 'application/json')
     }
 
@@ -88,16 +89,36 @@ export class ApiClient {
   }
 
   post<T>(endpoint: string, body?: unknown) {
+    console.log(body)
     return this.request<T>(endpoint, {
       method: 'POST',
-      body: body ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData
+        ? body
+        : body
+          ? JSON.stringify(body)
+          : undefined,
     })
   }
 
   put<T>(endpoint: string, body?: unknown) {
     return this.request<T>(endpoint, {
       method: 'PUT',
-      body: body ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData
+        ? body
+        : body
+          ? JSON.stringify(body)
+          : undefined,
+    })
+  }
+
+  patch<T>(endpoint: string, body?: unknown) {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
+      body: body instanceof FormData
+        ? body
+        : body
+          ? JSON.stringify(body)
+          : undefined,
     })
   }
 
@@ -107,3 +128,8 @@ export class ApiClient {
 }
 
 export const apiClient = ApiClient.getInstance()
+
+
+function isFormData(body: unknown): body is FormData {
+  return typeof FormData !== 'undefined' && body instanceof FormData
+}

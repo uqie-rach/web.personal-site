@@ -5,12 +5,12 @@ export const portfolioSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
   description: z.string().min(1, "Description is required").max(500, "Description must be less than 500 characters"),
-  image: z.string().min(1, "Image is required"),
+  image: z.any(),
   technologies: z.array(z.string()).min(1, "At least one technology is required"),
   liveUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   repoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   featured: z.boolean().default(false),
-  order: z.number().default(0),
+  order: z.number().optional(),
 })
 
 export type Portfolio = z.infer<typeof portfolioSchema>

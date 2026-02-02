@@ -1,11 +1,19 @@
+import { Portfolio as PortfolioSchema } from "./schemas"
+
+export interface ImageType {
+  id: string
+  path: string
+  publicUrl: string
+}
+
 export interface Portfolio {
   id: string
   title: string
   description: string
-  image?: string
+  image?: ImageType
   techStacks: string[]
   liveUrl?: string
-  repositoryUrl?: string
+  repoUrl?: string
   featured: boolean
   createdAt: Date
   updatedAt: Date
@@ -42,7 +50,7 @@ export interface BlogPost {
 export interface TechStack {
   id: string
   name: string
-  category: "frontend" | "backend" | "design" | "devops"
+  category: string
   icon?: string
   proficiency: "beginner" | "intermediate" | "advanced" | "expert"
   createdAt: Date
