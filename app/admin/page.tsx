@@ -1,13 +1,41 @@
 import { Container } from "@/components/container"
 import { Card } from "@/components/ui/card"
+import { apiClient, isSuccess } from "@/lib/api-client"
+import { BackendListResponse } from "@/lib/backend-raw.type"
+import { Blog, Experience, Portfolio, TechStack } from "@/lib/schemas"
 import { Briefcase, FileText, Layers, Code2 } from "lucide-react"
 
-export default function AdminDashboard() {
+export default async function AdminDashboard() {
+  const blogs = await apiClient.get<Blog[]>('/blogs')
+  const experiences = await apiClient.get<Experience[]>('/experiences')
+  const techstacks = await apiClient.get<TechStack[]>('/tech-stacks')
+  const portfolios = await apiClient.get<Portfolio[]>('/portfolios')
+
   const stats = [
-    { label: "Portfolio Items", value: 6, icon: Briefcase, href: "/admin/portfolio" },
-    { label: "Experience", value: 3, icon: Layers, href: "/admin/experience" },
-    { label: "Blog Posts", value: 0, icon: FileText, href: "/admin/blog" },
-    { label: "Tech Stack", value: 12, icon: Code2, href: "/admin/tech-stack" },
+    {
+      label: "Portfolio Items",
+      value: isSuccess(portfolios) ? portfolios.data.length : 0,
+      icon: Briefcase,
+      href: "/admin/portfolio"
+    },
+    {
+      label: "Experience",
+      value: isSuccess(experiences) ? experiences.data?.length : 0,
+      icon: Layers,
+      href: "/admin/experience"
+    },
+    {
+      label: "Blog Posts",
+      value: isSuccess(blogs) ? blogs.data?.length : 0,
+      icon: FileText,
+      href: "/admin/blog"
+    },
+    {
+      label: "Tech Stack",
+      value: isSuccess(techstacks) ? techstacks.data?.length : 0,
+      icon: Code2,
+      href: "/admin/tech-stack"
+    },
   ]
 
   return (

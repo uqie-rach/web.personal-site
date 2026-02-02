@@ -17,9 +17,9 @@ export function useTechStack(options?: UseTechStackOptions) {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await apiClient.get<TechStack[]>("/tech-stack")
-      if (!response.success) {
-        throw new Error(response.error || "Failed to fetch tech stack items")
+      const response = await apiClient.get<TechStack[]>("/tech-stacks")
+      if (!response.ok) {
+        throw new Error(response.message || "Failed to fetch tech stack items")
       }
       return response.data || []
     } catch (err) {
@@ -37,9 +37,9 @@ export function useTechStack(options?: UseTechStackOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.get<TechStack>(`/tech-stack/${id}`)
-        if (!response.success) {
-          throw new Error(response.error || "Failed to fetch tech stack item")
+        const response = await apiClient.get<TechStack>(`/tech-stacks/${id}`)
+        if (!response.ok) {
+          throw new Error(response.message || "Failed to fetch tech stack item")
         }
         return response.data
       } catch (err) {
@@ -59,9 +59,9 @@ export function useTechStack(options?: UseTechStackOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.post<TechStack>("/tech-stack", data)
-        if (!response.success) {
-          throw new Error(response.error || "Failed to create tech stack item")
+        const response = await apiClient.post<TechStack>("/tech-stacks", data)
+        if (!response.ok) {
+          throw new Error(response.message || "Failed to create tech stack item")
         }
         options?.onSuccess?.("Tech stack item created successfully")
         return response.data
@@ -82,9 +82,9 @@ export function useTechStack(options?: UseTechStackOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.put<TechStack>(`/tech-stack/${id}`, data)
-        if (!response.success) {
-          throw new Error(response.error || "Failed to update tech stack item")
+        const response = await apiClient.put<TechStack>(`/tech-stacks/${id}`, data)
+        if (!response.ok) {
+          throw new Error(response.message || "Failed to update tech stack item")
         }
         options?.onSuccess?.("Tech stack item updated successfully")
         return response.data
@@ -105,9 +105,9 @@ export function useTechStack(options?: UseTechStackOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.delete<{ success: boolean }>(`/tech-stack/${id}`)
-        if (!response.success) {
-          throw new Error(response.error || "Failed to delete tech stack item")
+        const response = await apiClient.delete<{ success: boolean }>(`/tech-stacks/${id}`)
+        if (!response.ok) {
+          throw new Error(response.message || "Failed to delete tech stack item")
         }
         options?.onSuccess?.("Tech stack item deleted successfully")
         return true

@@ -6,23 +6,29 @@ import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/data-table"
 import { TechStackForm } from "@/components/tech-stack-form"
 import { techStackStorage } from "@/lib/storage"
-import type { TechStack } from "@/lib/types"
+
 import { Plus, X } from "lucide-react"
+import { useTechStack } from "@/hooks/use-tech-stack"
+import { TechStack } from "@/lib/schemas"
 
 export default function TechStackAdmin() {
-  const [techs, setTechs] = useState<TechStack[]>([])
+  const [techs, setTechs] = useState<TechStack[] | []>([])
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState<TechStack["category"] | "all">("all")
+
+  const { getAll } = useTechStack();
 
   useEffect(() => {
     loadTechs()
   }, [])
 
   const loadTechs = () => {
-    const allTechs = techStackStorage.getAll()
-    setTechs(allTechs.sort((a, b) => a.category.localeCompare(b.category)))
+    getAll()
+      .then(res => {
+        setTechs(res)
+      })
   }
 
   const handleSubmit = (data: Omit<TechStack, "id" | "createdAt" | "updatedAt">) => {

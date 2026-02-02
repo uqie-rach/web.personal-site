@@ -10,7 +10,6 @@ export function normalizeResponse<T>(
     typeof raw.hasNextPage === 'boolean'
   ) {
 
-    console.log('case 1')
     return {
       data: raw.data as T,
       meta: {
@@ -19,7 +18,6 @@ export function normalizeResponse<T>(
     }
   }
   
-  console.log('case 2')
   // CASE 2: normal single response (login, create, update, get by id)
   return {
     data: raw as T,

@@ -178,6 +178,6 @@ export const authStorage = {
     return user ? JSON.parse(user) : null
   },
   isAuthenticated: (): boolean => {
-    return !!localStorage.getItem(`${STORAGE_PREFIX}token`)
+    return !!localStorage.getItem(`${STORAGE_PREFIX}.isAuthenticated`)
   },
 }
