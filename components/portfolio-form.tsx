@@ -7,61 +7,97 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { X, Upload } from "lucide-react"
-import type { Portfolio } from "@/lib/types"
+import { Portfolio as PortfolioType } from "@/lib/schemas"
+import Image from "next/image"
+import { useFile } from "@/hooks/use-file"
+import { constants } from "@/lib/constants"
 
 interface PortfolioFormProps {
-  initial?: Portfolio
-  onSubmit: (data: Omit<Portfolio, "id" | "createdAt" | "updatedAt">) => void
+  initial?: PortfolioType
+  onSubmit: (data: Omit<PortfolioType, 'id'>) => void
   isLoading?: boolean
 }
 
 export function PortfolioForm({ initial, onSubmit, isLoading = false }: PortfolioFormProps) {
+  /**
+   * Local State
+   */
   const [title, setTitle] = useState(initial?.title || "")
   const [description, setDescription] = useState(initial?.description || "")
-  const [image, setImage] = useState(initial?.image || "")
-  const [imagePreview, setImagePreview] = useState(initial?.image || "")
+  const [imagePreview, setImagePreview] = useState(initial?.image?.publicUrl ?? "/placeholder.svg")
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [liveUrl, setLiveUrl] = useState(initial?.liveUrl || "")
-  const [repositoryUrl, setRepositoryUrl] = useState(initial?.repositoryUrl || "")
+  const [repoUrl, setRepoUrl] = useState(initial?.repoUrl || "")
   const [featured, setFeatured] = useState(initial?.featured || false)
-  const [techStacks, setTechStacks] = useState<string[]>(initial?.techStacks || [])
+  const [techs, setTechs] = useState<string[]>(initial?.technologies || [])
   const [techInput, setTechInput] = useState("")
+
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  /**
+   * Custom Hooks /. Context Management
+   */
+  const {
+    upload,
+    _delete
+  } = useFile();
+
+  /**
+   * Functions
+   */
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const result = reader.result as string
-        setImage(result)
-        setImagePreview(result)
+      if (file.size > constants.MAX_IMAGE_SIZE) {
+        alert('Max 5 MB')
+        return;
       }
-      reader.readAsDataURL(file)
+
+      setImageFile(file)
+      setImagePreview(URL.createObjectURL(file))
     }
   }
 
   const handleAddTech = () => {
-    if (techInput.trim() && !techStacks.includes(techInput.trim())) {
-      setTechStacks([...techStacks, techInput.trim()])
+    if (techInput.trim() && !techs.includes(techInput.trim())) {
+      setTechs([...techs, techInput.trim()])
       setTechInput("")
     }
   }
 
   const handleRemoveTech = (tech: string) => {
-    setTechStacks(techStacks.filter((t) => t !== tech))
+    setTechs(techs.filter((t) => t !== tech))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    let imageId = initial?.image ?? ""
+
+    // Check if updating image
+    if (imageFile) {
+      if (imageId){
+        // Delete old image from storage
+        await _delete(initial?.image?.path)
+      }
+
+      // if success, upload new image
+      const response = await upload(imageFile)
+      imageId = response?.file.id ?? "";
+    }
+
     onSubmit({
       title,
       description,
-      image,
+      image: imageId,
       liveUrl,
-      repositoryUrl,
+      repoUrl,
       featured,
-      techStacks,
+      technologies: techs,
+      order: 0
     })
+
+    setImageFile(null)
   }
 
   return (
@@ -84,7 +120,13 @@ export function PortfolioForm({ initial, onSubmit, isLoading = false }: Portfoli
 
           {imagePreview && (
             <div className="w-32 h-32 rounded-lg overflow-hidden border border-border flex-shrink-0">
-              <img src={imagePreview || "/placeholder.svg"} alt="Preview" className="w-full h-full object-cover" />
+              <Image
+                src={imagePreview ?? "public/placeholder.svg"}
+                alt="Preview"
+                className="w-full h-full object-cover"
+                width={100}
+                height={100}
+              />
             </div>
           )}
         </div>
@@ -132,9 +174,9 @@ export function PortfolioForm({ initial, onSubmit, isLoading = false }: Portfoli
             Add
           </Button>
         </div>
-        {techStacks.length > 0 && (
+        {techs.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {techStacks.map((tech) => (
+            {techs.map((tech) => (
               <div key={tech} className="inline-flex items-center gap-2 bg-primary/10 px-3 py-1 rounded-full text-sm">
                 {tech}
                 <button type="button" onClick={() => handleRemoveTech(tech)} className="hover:text-destructive">
@@ -160,11 +202,11 @@ export function PortfolioForm({ initial, onSubmit, isLoading = false }: Portfoli
           />
         </div>
         <div>
-          <Label htmlFor="repositoryUrl">Repository URL</Label>
+          <Label htmlFor="repoUrl">Repository URL</Label>
           <Input
-            id="repositoryUrl"
-            value={repositoryUrl}
-            onChange={(e) => setRepositoryUrl(e.target.value)}
+            id="repoUrl"
+            value={repoUrl}
+            onChange={(e) => setRepoUrl(e.target.value)}
             placeholder="https://github.com/..."
             type="url"
             className="mt-2"

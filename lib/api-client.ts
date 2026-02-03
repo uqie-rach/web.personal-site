@@ -89,7 +89,6 @@ export class ApiClient {
   }
 
   post<T>(endpoint: string, body?: unknown) {
-    console.log(body)
     return this.request<T>(endpoint, {
       method: 'POST',
       body: body instanceof FormData
@@ -122,8 +121,12 @@ export class ApiClient {
     })
   }
 
-  delete<T>(endpoint: string) {
-    return this.request<T>(endpoint, { method: 'DELETE' })
+  delete<T>(endpoint: string, body?: unknown) {
+    return this.request<T>(endpoint,
+      {
+        method: 'DELETE',
+        body: body ? JSON.stringify(body) : undefined
+      })
   }
 }
 

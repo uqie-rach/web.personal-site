@@ -5,44 +5,85 @@ import { Container } from "@/components/container"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/data-table"
 import { PortfolioForm } from "@/components/portfolio-form"
-import { portfolioStorage } from "@/lib/storage"
-import type { Portfolio } from "@/lib/types"
 import { Plus, X } from "lucide-react"
+import { useAuthStore } from "@/lib/store/auth-store"
+import { Portfolio as PortfolioType } from "@/lib/schemas"
+import { usePortfolio } from "@/hooks/use-portfolio"
+import { useRouter } from "next/navigation"
 
 export default function PortfolioAdmin() {
-  const [portfolios, setPortfolios] = useState<Portfolio[]>([])
+  const [portfolios, setPortfolios] = useState<PortfolioType[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  const { user } = useAuthStore();
+
+  const {
+    getAll,
+    delete: deletePorto,
+    create,
+    update
+  } = usePortfolio();
+
+  const router = useRouter()
+
+  const loadPortfolios = () => {
+    getAll()
+      .then(res => {
+        setPortfolios(res)
+      })
+  }
+
+  const handleSubmit = (data: Omit<PortfolioType, "id" | "createdAt" | "updatedAt">) => {
+    setLoading(true)
+
+    try {
+      if (editingId) {
+        // Update portfolio -> insert new image
+        update(editingId, data)
+        setEditingId(null)
+
+      } else {
+        const { order, ...rest } = data;
+
+        // Create new Portfolio
+        create({
+          order: 0,
+          id: '',
+          ownedBy: { id: user?.id },
+          ...rest
+        })
+      }
+      loadPortfolios()
+      setShowForm(false)
+
+      // refresh
+    } finally {
+      setLoading(false)
+      setTimeout(() => {
+        router.refresh()
+      }, 1000);
+    }
+  }
+
+  const handleDelete = (id: string) => {
+    deletePorto(id)
+    loadPortfolios()
+
+    setTimeout(() => {
+      router.refresh()
+    }, 1000);
+  }
+
 
   useEffect(() => {
     loadPortfolios()
   }, [])
 
-  const loadPortfolios = () => {
-    setPortfolios(portfolioStorage.getAll())
-  }
-
-  const handleSubmit = (data: Omit<Portfolio, "id" | "createdAt" | "updatedAt">) => {
-    setLoading(true)
-    try {
-      if (editingId) {
-        portfolioStorage.update(editingId, data)
-        setEditingId(null)
-      } else {
-        portfolioStorage.create(data)
-      }
-      loadPortfolios()
-      setShowForm(false)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleDelete = (id: string) => {
-    portfolioStorage.delete(id)
-    loadPortfolios()
-  }
+  useEffect(() => {
+    loadPortfolios
+  }, [create, update, handleDelete])
 
   const editingItem = editingId ? portfolios.find((p) => p.id === editingId) : undefined
 
@@ -72,12 +113,12 @@ export default function PortfolioAdmin() {
         </div>
       )}
 
-      <DataTable<Portfolio>
+      <DataTable<PortfolioType>
         data={portfolios}
         columns={[
           { key: "title", label: "Title" },
           {
-            key: "techStacks",
+            key: "technologies",
             label: "Technologies",
             render: (value) => (
               <div className="flex gap-1 flex-wrap">
@@ -106,7 +147,9 @@ export default function PortfolioAdmin() {
           setEditingId(item.id)
           setShowForm(true)
         }}
-        onDelete={handleDelete}
+        onDelete={(id) => {
+          handleDelete(id)
+        }}
         loading={loading}
       />
     </Container>
