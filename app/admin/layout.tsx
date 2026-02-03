@@ -15,15 +15,17 @@ export default function AdminLayout({
 }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const { isAuthenticated, hasHydrated} = useAuthStore();
 
   useEffect(() => {
-    // Check authentication after hydration
-    setIsLoading(false)
+    if (!hasHydrated) return
+
     if (!isAuthenticated) {
-      router.push("/admin/login")
+      router.replace("/login")
     }
-  }, [isAuthenticated, router])
+
+    setIsLoading(false)
+  }, [hasHydrated, isAuthenticated, router])
 
   if (isLoading) {
     return (

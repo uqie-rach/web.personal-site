@@ -1,7 +1,6 @@
 import { Container } from "@/components/container"
 import { Card } from "@/components/ui/card"
 import { apiClient, isSuccess } from "@/lib/api-client"
-import { BackendListResponse } from "@/lib/backend-raw.type"
 import { Blog, Experience, Portfolio, TechStack } from "@/lib/schemas"
 import { Briefcase, FileText, Layers, Code2 } from "lucide-react"
 
