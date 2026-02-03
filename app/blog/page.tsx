@@ -42,7 +42,6 @@ export default function BlogPage() {
 
       const matchesCategory = !selectedCategory || post.tags.toLowerCase() === selectedCategory
 
-      console.log(matchesSearch, matchesCategory)
       return matchesSearch && matchesCategory
     })
   }, [searchQuery, selectedCategory, blogs])

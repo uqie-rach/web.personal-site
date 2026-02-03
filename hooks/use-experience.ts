@@ -18,8 +18,8 @@ export function useExperience(options?: UseExperienceOptions) {
     setError(null)
     try {
       const response = await apiClient.get<Experience[]>("/experiences")
-      console.log(response?.data?.data)
-      if (!response.success) {
+
+      if (!response.ok) {
         throw new Error(response.error || "Failed to fetch experience items")
       }
       return response?.data?.data || []

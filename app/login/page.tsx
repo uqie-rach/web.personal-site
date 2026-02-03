@@ -24,7 +24,6 @@ export default function LoginPage() {
     const success = await login(email, password)
 
     if (success) {
-      console.log('scs', success)
       router.push("/admin")
     } else {
       setError("Invalid credentials")
