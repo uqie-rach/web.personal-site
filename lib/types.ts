@@ -21,7 +21,7 @@ export interface Portfolio {
 
 export interface Experience {
   id: string
-  role: string
+  title: string
   company: string
   location: string
   startDate: Date

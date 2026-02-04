@@ -7,6 +7,7 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 import { AdminHeader } from "@/components/admin-header"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { useAuthStore } from "@/lib/store/auth-store"
+import { Toaster } from "sonner"
 
 export default function AdminLayout({
   children,
@@ -46,6 +47,7 @@ export default function AdminLayout({
           <AdminHeader />
           <main className="flex-1 overflow-y-auto bg-background">{children}</main>
         </div>
+        <Toaster />
       </div>
     </SidebarProvider>
   )

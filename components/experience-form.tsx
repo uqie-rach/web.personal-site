@@ -16,7 +16,10 @@ interface ExperienceFormProps {
 }
 
 export function ExperienceForm({ initial, onSubmit, isLoading = false }: ExperienceFormProps) {
-  const [role, setRole] = useState(initial?.role || "")
+  /**
+   * Local State
+   */
+  const [title, setTitle] = useState(initial?.title || "")
   const [company, setCompany] = useState(initial?.company || "")
   const [location, setLocation] = useState(initial?.location || "")
   const [startDate, setStartDate] = useState(
@@ -28,6 +31,13 @@ export function ExperienceForm({ initial, onSubmit, isLoading = false }: Experie
   const [accomplishments, setAccomplishments] = useState<string[]>(initial?.accomplishments || [])
   const [accomplishmentInput, setAccomplishmentInput] = useState("")
 
+  /**
+   * Context Management / Custom Hooks
+   */
+
+  /**
+   * Functions
+   */
   const handleAddAccomplishment = () => {
     if (accomplishmentInput.trim()) {
       setAccomplishments([...accomplishments, accomplishmentInput.trim()])
@@ -40,9 +50,20 @@ export function ExperienceForm({ initial, onSubmit, isLoading = false }: Experie
   }
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+
+    console.log({
+      title,
+      company,
+      location,
+      startDate: new Date(startDate),
+      endDate: endDate ? new Date(endDate) : undefined,
+      current,
+      workStyle,
+      accomplishments,
+    })
     onSubmit({
-      role,
+      title,
       company,
       location,
       startDate: new Date(startDate),
@@ -60,8 +81,8 @@ export function ExperienceForm({ initial, onSubmit, isLoading = false }: Experie
           <Label htmlFor="role">Job Title *</Label>
           <Input
             id="role"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             placeholder="Senior Developer"
             className="mt-2"
             required

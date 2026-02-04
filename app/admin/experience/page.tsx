@@ -5,45 +5,102 @@ import { Container } from "@/components/container"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/data-table"
 import { ExperienceForm } from "@/components/experience-form"
-import { experienceStorage } from "@/lib/storage"
-import type { Experience } from "@/lib/types"
+import type { Experience as ExperienceType } from "@/lib/types"
 import { Plus, X } from "lucide-react"
+import { useExperience } from "@/hooks/use-experience"
+import { useRouter } from "next/navigation"
+import { Experience } from "@/lib/schemas"
+import { useAuthStore } from "@/lib/store/auth-store"
+import { toast } from "sonner"
 
 export default function ExperienceAdmin() {
   const [experiences, setExperiences] = useState<Experience[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    loadExperiences()
-  }, [])
+  // Global Contexts / Custom hooks
+  const {
+    user
+  } = useAuthStore();
 
-  const loadExperiences = () => {
-    setExperiences(
-      experienceStorage.getAll().sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
-    )
+  const {
+    create,
+    delete: _delete,
+    update,
+    getAll,
+    getById,
+    isLoading,
+    error
+  } = useExperience();
+
+  const router = useRouter();
+
+  // Methods
+
+  const getExperiences = async () => {
+    try {
+      const response = await getAll();
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      setExperiences(response)
+    } catch {
+      toast.error(
+        `Failed! ${error}`,
+        {
+          position: "top-center",
+        }
+      )
+    }
   }
 
-  const handleSubmit = (data: Omit<Experience, "id" | "createdAt" | "updatedAt">) => {
-    setLoading(true)
+  // Lifecycle methods
+  /**
+   * Executed every time data is being mutated
+   */
+  useEffect(() => {
+    getExperiences()
+  }, [create, _delete, update])
+
+  /**
+   * Executed on the initial load
+   */
+  useEffect(() => {
+    getExperiences()
+  }, [])
+
+  const handleSubmit = async (data: Omit<Experience, "id">) => {
+
     try {
       if (editingId) {
-        experienceStorage.update(editingId, data)
+        await update(editingId, data);
         setEditingId(null)
       } else {
-        experienceStorage.create(data)
+        await create({
+          ownedBy: { id: user?.id },
+          ...data
+        });
       }
-      loadExperiences()
+      getExperiences()
       setShowForm(false)
     } finally {
-      setLoading(false)
+      console.log(error)
+      if (error) {
+        toast.error(
+          error,
+          {
+            position: 'top-center'
+          }
+        )
+      }
     }
   }
 
   const handleDelete = (id: string) => {
-    experienceStorage.delete(id)
-    loadExperiences()
+    // experienceStorage.delete(id)
+    getExperiences()
   }
 
   const editingItem = editingId ? experiences.find((e) => e.id === editingId) : undefined
@@ -70,14 +127,14 @@ export default function ExperienceAdmin() {
       {showForm && (
         <div className="bg-card border border-border rounded-lg p-6 mb-8">
           <h3 className="text-lg font-semibold mb-6">{editingId ? "Edit Experience" : "New Experience"}</h3>
-          <ExperienceForm initial={editingItem} onSubmit={handleSubmit} isLoading={loading} />
+          <ExperienceForm initial={editingItem} onSubmit={handleSubmit} isLoading={isLoading} />
         </div>
       )}
 
-      <DataTable<Experience>
+      <DataTable<ExperienceType>
         data={experiences}
         columns={[
-          { key: "role", label: "Role" },
+          { key: "title", label: "Title" },
           { key: "company", label: "Company" },
           { key: "location", label: "Location" },
           {
@@ -95,7 +152,7 @@ export default function ExperienceAdmin() {
           setShowForm(true)
         }}
         onDelete={handleDelete}
-        loading={loading}
+        loading={isLoading}
       />
     </Container>
   )
