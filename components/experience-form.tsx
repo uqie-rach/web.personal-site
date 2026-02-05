@@ -26,7 +26,7 @@ export function ExperienceForm({ initial, onSubmit, isLoading = false }: Experie
     initial?.startDate ? new Date(initial.startDate).toISOString().split("T")[0] : "",
   )
   const [endDate, setEndDate] = useState(initial?.endDate ? new Date(initial.endDate).toISOString().split("T")[0] : "")
-  const [current, setCurrent] = useState(initial?.current || false)
+  const [isCurrently, setIsCurrently] = useState(initial?.isCurrently || false)
   const [workStyle, setWorkStyle] = useState(initial?.workStyle || "")
   const [accomplishments, setAccomplishments] = useState<string[]>(initial?.accomplishments || [])
   const [accomplishmentInput, setAccomplishmentInput] = useState("")
@@ -58,7 +58,7 @@ export function ExperienceForm({ initial, onSubmit, isLoading = false }: Experie
       location,
       startDate: new Date(startDate),
       endDate: endDate ? new Date(endDate) : undefined,
-      current,
+      isCurrently,
       workStyle,
       accomplishments,
     })
@@ -68,9 +68,10 @@ export function ExperienceForm({ initial, onSubmit, isLoading = false }: Experie
       location,
       startDate: new Date(startDate),
       endDate: endDate ? new Date(endDate) : undefined,
-      current,
+      isCurrently,
       workStyle,
       accomplishments,
+      order: 0,
     })
   }
 
@@ -146,7 +147,7 @@ export function ExperienceForm({ initial, onSubmit, isLoading = false }: Experie
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            disabled={current}
+            disabled={isCurrently}
             className="mt-2"
           />
         </div>
@@ -155,9 +156,9 @@ export function ExperienceForm({ initial, onSubmit, isLoading = false }: Experie
       <label className="flex items-center gap-3 cursor-pointer">
         <input
           type="checkbox"
-          checked={current}
+          checked={isCurrently}
           onChange={(e) => {
-            setCurrent(e.target.checked)
+            setIsCurrently(e.target.checked)
             if (e.target.checked) setEndDate("")
           }}
           className="w-4 h-4"

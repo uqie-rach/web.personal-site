@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation"
 import { Experience } from "@/lib/schemas"
 import { useAuthStore } from "@/lib/store/auth-store"
 import { toast } from "sonner"
+import { toastConfig } from "@/lib/constants"
 
 export default function ExperienceAdmin() {
   const [experiences, setExperiences] = useState<Experience[]>([])
@@ -28,10 +29,16 @@ export default function ExperienceAdmin() {
     delete: _delete,
     update,
     getAll,
-    getById,
     isLoading,
     error
-  } = useExperience();
+  } = useExperience({
+    onSuccess(message) {
+      toast.success(message, toastConfig)
+    },
+    onError(error) {
+      toast.error(error, toastConfig)
+    },
+  });
 
   const router = useRouter();
 
@@ -58,13 +65,6 @@ export default function ExperienceAdmin() {
 
   // Lifecycle methods
   /**
-   * Executed every time data is being mutated
-   */
-  useEffect(() => {
-    getExperiences()
-  }, [create, _delete, update])
-
-  /**
    * Executed on the initial load
    */
   useEffect(() => {
@@ -72,34 +72,26 @@ export default function ExperienceAdmin() {
   }, [])
 
   const handleSubmit = async (data: Omit<Experience, "id">) => {
-
-    try {
-      if (editingId) {
-        await update(editingId, data);
-        setEditingId(null)
-      } else {
-        await create({
-          ownedBy: { id: user?.id },
-          ...data
-        });
-      }
-      getExperiences()
-      setShowForm(false)
-    } finally {
-      console.log(error)
-      if (error) {
-        toast.error(
-          error,
-          {
-            position: 'top-center'
-          }
-        )
-      }
+    if (editingId) {
+      await update(editingId, data);
+      setEditingId(null)
+    } else {
+      await create({
+        ownedBy: { id: user?.id },
+        ...data
+      });
     }
+
+    getExperiences()
+    setTimeout(() => {
+      setShowForm(false);
+      router.refresh()
+    }, 1000);
   }
 
-  const handleDelete = (id: string) => {
-    // experienceStorage.delete(id)
+  const handleDelete = async (id: string) => {
+    await _delete(id);
+
     getExperiences()
   }
 
@@ -138,7 +130,7 @@ export default function ExperienceAdmin() {
           { key: "company", label: "Company" },
           { key: "location", label: "Location" },
           {
-            key: "current",
+            key: "isCurrently",
             label: "Status",
             render: (value) => (
               <span className={value ? "text-primary font-semibold" : "text-muted-foreground"}>

@@ -67,7 +67,9 @@ export function useExperience(options?: UseExperienceOptions) {
       setError(null)
       try {
         const response = await apiClient.post<Experience>("/experiences", data)
+        console.log('from hooks', response)
         if (!response.ok) {
+          console.log('not ok')
           throw new Error(response.message || "Failed to create experience item")
         }
         options?.onSuccess?.("Experience item created successfully")
@@ -89,7 +91,7 @@ export function useExperience(options?: UseExperienceOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.put<Experience>(`/experiences/${id}`, data)
+        const response = await apiClient.patch<Experience>(`/experiences/${id}`, data)
         if (!response.ok) {
           throw new Error(response.message || "Failed to update experience item")
         }
