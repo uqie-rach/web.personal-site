@@ -15,7 +15,10 @@ export default function PortfolioAdmin() {
   const [portfolios, setPortfolios] = useState<PortfolioType[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(10)
+  const [hasNextPage, setHasNextPage] = useState(false)
+  const [tempLimit, setTempLimit] = useState("10")
 
   const { user } = useAuthStore();
 
@@ -23,62 +26,79 @@ export default function PortfolioAdmin() {
     getAll,
     delete: deletePorto,
     create,
-    update
+    update,
+    isLoading
   } = usePortfolio();
 
   const router = useRouter()
 
-  const loadPortfolios = () => {
-    getAll()
-      .then(res => {
-        setPortfolios(res)
-      })
+  const loadPortfolios = async (pageNum: number = 1, pageLimit: number = 10) => {
+    try {
+      const response = await getAll(pageLimit, pageNum)
+      
+      if (pageNum === 1) {
+        setPortfolios(response.data)
+      } else {
+        setPortfolios((prev) => [...prev, ...response.data])
+      }
+      
+      setHasNextPage(response.hasNextPage)
+    } catch (err) {
+      console.error(err)
+    }
   }
 
-  const handleSubmit = (data: Omit<PortfolioType, "id" | "createdAt" | "updatedAt">) => {
-    setLoading(true)
-
+  const handleSubmit = async (data: Omit<PortfolioType, "id" | "createdAt" | "updatedAt">) => {
     try {
       if (editingId) {
         // Update portfolio -> insert new image
-        update(editingId, data)
+        await update(editingId, data)
         setEditingId(null)
 
       } else {
         const { order, ...rest } = data;
 
         // Create new Portfolio
-        create({
+        await create({
           order: 0,
           id: '',
           ownedBy: { id: user?.id },
           ...rest
         })
       }
-      loadPortfolios()
+      loadPortfolios(1, limit)
       setShowForm(false)
 
       // refresh
-    } finally {
-      setLoading(false)
-      setTimeout(() => {
-        router.refresh()
-      }, 1000);
+    } catch (err) {
+      console.error(err)
     }
   }
 
-  const handleDelete = (id: string) => {
-    deletePorto(id)
-    loadPortfolios()
-
-    setTimeout(() => {
-      router.refresh()
-    }, 1000);
+  const handleDelete = async (id: string) => {
+    try {
+      await deletePorto(id)
+      loadPortfolios(1, limit)
+    } catch (err) {
+      console.error(err)
+    }
   }
 
+  const handleLimitChange = () => {
+    const newLimit = parseInt(tempLimit) || 10
+    setLimit(newLimit)
+    setPage(1)
+    loadPortfolios(1, newLimit)
+  }
+
+  const handleNextPage = () => {
+    const nextPage = page + 1
+    setPage(nextPage)
+    loadPortfolios(nextPage, limit)
+  }
 
   useEffect(() => {
-    loadPortfolios()
+    loadPortfolios(1, limit)
   }, [])
 
   useEffect(() => {
@@ -109,7 +129,7 @@ export default function PortfolioAdmin() {
       {showForm && (
         <div className="bg-card border border-border rounded-lg p-6 mb-8">
           <h3 className="text-lg font-semibold mb-6">{editingId ? "Edit Project" : "New Project"}</h3>
-          <PortfolioForm initial={editingItem} onSubmit={handleSubmit} isLoading={loading} />
+          <PortfolioForm initial={editingItem} onSubmit={handleSubmit} isLoading={isLoading} />
         </div>
       )}
 
@@ -150,8 +170,35 @@ export default function PortfolioAdmin() {
         onDelete={(id) => {
           handleDelete(id)
         }}
-        loading={loading}
+        loading={isLoading}
       />
+
+      {/* Pagination Controls */}
+      <div className="mt-8 space-y-4">
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-medium">Items per page:</label>
+          <input
+            type="number"
+            min="1"
+            max="100"
+            value={tempLimit}
+            onChange={(e) => setTempLimit(e.target.value)}
+            onBlur={handleLimitChange}
+            onKeyPress={(e) => e.key === "Enter" && handleLimitChange()}
+            className="w-20 px-3 py-2 border border-border rounded-md text-sm"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">
+            Page {page} • Showing {portfolios.length} items
+          </span>
+          {hasNextPage && (
+            <Button onClick={handleNextPage} disabled={isLoading} size="sm">
+              Load More
+            </Button>
+          )}
+        </div>
+      </div>
     </Container>
   )
 }

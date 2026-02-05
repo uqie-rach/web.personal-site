@@ -13,21 +13,24 @@ export function useExperience(options?: UseExperienceOptions) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const getAll = useCallback(async () => {
+  const getAll = useCallback(async (limit = 10, page = 1) => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await apiClient.get<Experience[]>("/experiences")
+      const response = await apiClient.get<Experience[]>(`/experiences?limit=${limit}&page=${page}`)
 
       if (!response.ok) {
         throw new Error(response.message || "Failed to fetch experience items")
       }
-      return response?.data || []
+      return {
+        data: response.data || [],
+        hasNextPage: (response.meta as any)?.hasNextPage || false,
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to fetch experience items"
       setError(message)
       options?.onError?.(message)
-      return []
+      return { data: [], hasNextPage: false }
     } finally {
       setIsLoading(false)
     }

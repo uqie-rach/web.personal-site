@@ -24,6 +24,10 @@ export default function ExperienceAdmin() {
   const [experiences, setExperiences] = useState<DisplayExperience[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(10)
+  const [hasNextPage, setHasNextPage] = useState(false)
+  const [tempLimit, setTempLimit] = useState("10")
 
   // Global Contexts / Custom hooks
   const {
@@ -50,13 +54,21 @@ export default function ExperienceAdmin() {
 
   // Methods
 
-  const getExperiences = async () => {
+  const getExperiences = async (pageNum: number = 1, pageLimit: number = 10) => {
     try {
-      const response = await getAll();
+      const response = await getAll(pageLimit, pageNum);
 
-      // Filter out items without id
-      const validExperiences = response.filter((exp): exp is DisplayExperience => !!exp.id)
-      setExperiences(validExperiences)
+      // Filter out items without id and normalize category
+      const validExperiences = response.data
+        .filter((exp): exp is DisplayExperience => !!exp.id)
+      
+      if (pageNum === 1) {
+        setExperiences(validExperiences)
+      } else {
+        setExperiences((prev) => [...prev, ...validExperiences])
+      }
+      
+      setHasNextPage(response.hasNextPage)
     } catch {
       toast.error(
         `Failed! ${error}`,
@@ -72,7 +84,7 @@ export default function ExperienceAdmin() {
    * Executed on the initial load
    */
   useEffect(() => {
-    getExperiences()
+    getExperiences(1, limit)
   }, [])
 
   const handleSubmit = async (data: Omit<Experience, "id">) => {
@@ -86,7 +98,7 @@ export default function ExperienceAdmin() {
       });
     }
 
-    getExperiences()
+    getExperiences(1, limit)
     setTimeout(() => {
       setShowForm(false);
       router.refresh()
@@ -96,7 +108,20 @@ export default function ExperienceAdmin() {
   const handleDelete = async (id: string) => {
     await _delete(id);
 
-    getExperiences()
+    getExperiences(1, limit)
+  }
+
+  const handleLimitChange = () => {
+    const newLimit = parseInt(tempLimit) || 10
+    setLimit(newLimit)
+    setPage(1)
+    getExperiences(1, newLimit)
+  }
+
+  const handleNextPage = () => {
+    const nextPage = page + 1
+    setPage(nextPage)
+    getExperiences(nextPage, limit)
   }
 
   const editingItem = editingId ? experiences.find((e) => e.id === editingId) : undefined
@@ -161,6 +186,33 @@ export default function ExperienceAdmin() {
         onDelete={handleDelete}
         loading={isLoading}
       />
+
+      {/* Pagination Controls */}
+      <div className="mt-8 space-y-4">
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-medium">Items per page:</label>
+          <input
+            type="number"
+            min="1"
+            max="100"
+            value={tempLimit}
+            onChange={(e) => setTempLimit(e.target.value)}
+            onBlur={handleLimitChange}
+            onKeyPress={(e) => e.key === "Enter" && handleLimitChange()}
+            className="w-20 px-3 py-2 border border-border rounded-md text-sm"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">
+            Page {page} • Showing {experiences.length} items
+          </span>
+          {hasNextPage && (
+            <Button onClick={handleNextPage} disabled={isLoading} size="sm">
+              Load More
+            </Button>
+          )}
+        </div>
+      </div>
     </Container>
   )
 }
