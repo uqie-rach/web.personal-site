@@ -26,9 +26,10 @@ export interface Experience {
   location: string
   startDate: Date
   endDate?: Date
-  current: boolean
+  isCurrently: boolean
   workStyle: string
   accomplishments: string[]
+  order: number
   createdAt: Date
   updatedAt: Date
 }
