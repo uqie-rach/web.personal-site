@@ -13,20 +13,23 @@ export function useTechStack(options?: UseTechStackOptions) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const getAll = useCallback(async () => {
+  const getAll = useCallback(async (limit = 10, page = 1) => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await apiClient.get<TechStack[]>("/tech-stacks")
+      const response = await apiClient.get<TechStack[]>(`/tech-stacks?limit=${limit}&page=${page}`)
       if (!response.ok) {
         throw new Error(response.message || "Failed to fetch tech stack items")
       }
-      return response.data || []
+      return {
+        data: response.data || [],
+        hasNextPage: response?.meta?.hasNextPage || false,
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to fetch tech stack items"
       setError(message)
       options?.onError?.(message)
-      return []
+      return { data: [], hasNextPage: false }
     } finally {
       setIsLoading(false)
     }
@@ -82,7 +85,7 @@ export function useTechStack(options?: UseTechStackOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.put<TechStack>(`/tech-stacks/${id}`, data)
+        const response = await apiClient.patch<TechStack>(`/tech-stacks/${id}`, data)
         if (!response.ok) {
           throw new Error(response.message || "Failed to update tech stack item")
         }
