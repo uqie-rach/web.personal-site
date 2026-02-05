@@ -14,8 +14,14 @@ import { useAuthStore } from "@/lib/store/auth-store"
 import { toast } from "sonner"
 import { toastConfig } from "@/lib/constants"
 
+interface DisplayExperience extends Omit<Experience, 'id'> {
+  id: string
+  createdAt?: Date
+  updatedAt?: Date
+}
+
 export default function ExperienceAdmin() {
-  const [experiences, setExperiences] = useState<Experience[]>([])
+  const [experiences, setExperiences] = useState<DisplayExperience[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -48,11 +54,9 @@ export default function ExperienceAdmin() {
     try {
       const response = await getAll();
 
-      if (error) {
-        throw new Error(error);
-      }
-
-      setExperiences(response)
+      // Filter out items without id
+      const validExperiences = response.filter((exp): exp is DisplayExperience => !!exp.id)
+      setExperiences(validExperiences)
     } catch {
       toast.error(
         `Failed! ${error}`,
@@ -119,11 +123,22 @@ export default function ExperienceAdmin() {
       {showForm && (
         <div className="bg-card border border-border rounded-lg p-6 mb-8">
           <h3 className="text-lg font-semibold mb-6">{editingId ? "Edit Experience" : "New Experience"}</h3>
-          <ExperienceForm initial={editingItem} onSubmit={handleSubmit} isLoading={isLoading} />
+          <ExperienceForm initial={editingItem ? { 
+            id: editingItem.id, 
+            title: editingItem.title, 
+            company: editingItem.company, 
+            location: editingItem.location, 
+            startDate: editingItem.startDate, 
+            endDate: editingItem.endDate, 
+            isCurrently: editingItem.isCurrently, 
+            workStyle: editingItem.workStyle, 
+            accomplishments: editingItem.accomplishments, 
+            order: editingItem.order 
+          } : undefined} onSubmit={handleSubmit} isLoading={isLoading} />
         </div>
       )}
 
-      <DataTable<ExperienceType>
+      <DataTable<DisplayExperience>
         data={experiences}
         columns={[
           { key: "title", label: "Title" },

@@ -119,7 +119,7 @@ export function PortfolioForm({ initial, onSubmit, isLoading = false }: Portfoli
           </div>
 
           {imagePreview && (
-            <div className="w-32 h-32 rounded-lg overflow-hidden border border-border flex-shrink-0">
+            <div className="w-32 h-32 rounded-lg overflow-hidden border border-border shrink-0">
               <Image
                 src={imagePreview ?? "public/placeholder.svg"}
                 alt="Preview"
