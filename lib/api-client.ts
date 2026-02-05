@@ -62,9 +62,21 @@ export class ApiClient {
       const raw = await res.json().catch(() => null)
 
       if (!res.ok) {
+        console.log('from apiclient', raw)
+        
+        let errorMessage= raw?.message || 'Request failed'
+        
+        // Handle field-specific errors
+        if (raw?.errors && typeof raw.errors === 'object') {
+          const fieldErrors = Object.entries(raw.errors)
+            .map(([field, error]) => `${field}: ${error}`)
+            .join(', ')
+          errorMessage = fieldErrors || errorMessage
+        }
+        
         return {
           ok: false,
-          message: raw?.message || 'Request failed',
+          message: errorMessage,
           status: res.status,
         }
       }
