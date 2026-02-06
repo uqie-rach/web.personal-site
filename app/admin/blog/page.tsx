@@ -1,47 +1,157 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Container } from "@/components/container"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/data-table"
 import { BlogForm } from "@/components/blog-form"
-import { blogStorage } from "@/lib/storage"
-import type { BlogPost } from "@/lib/types"
-import { Plus, X } from "lucide-react"
+import { useBlog } from "@/hooks/use-blog"
+import { useTags, type Tag } from "@/hooks/use-tags"
+import type { Blog as BlogSchema } from "@/lib/schemas"
+import { Plus, X, Search, ChevronDown, ChevronUp } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useAuthStore } from "@/lib/store/auth-store"
+import { toast } from "sonner"
+import { toastConfig } from "@/lib/constants"
+
+interface DisplayBlog extends Omit<BlogSchema, 'id'> {
+  id: string
+  createdAt?: Date
+  updatedAt?: Date
+}
 
 export default function BlogAdmin() {
-  const [posts, setPosts] = useState<BlogPost[]>([])
+  const [posts, setPosts] = useState<DisplayBlog[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(10)
+  const [hasNextPage, setHasNextPage] = useState(false)
+  const [tempLimit, setTempLimit] = useState("10")
 
-  useEffect(() => {
-    loadPosts()
-  }, [])
+  // Tags state
+  const [availableTags, setAvailableTags] = useState<Tag[]>([])
+  const [tagSearch, setTagSearch] = useState("")
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false)
+  const tagDropdownRef = useRef<HTMLDivElement>(null)
 
-  const loadPosts = () => {
-    setPosts(blogStorage.getAll().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
-  }
+  // Global Contexts / Custom hooks
+  const {
+    user
+  } = useAuthStore();
 
-  const handleSubmit = (data: Omit<BlogPost, "id" | "createdAt" | "updatedAt">) => {
-    setLoading(true)
+  const {
+    create,
+    delete: _delete,
+    update,
+    getAll,
+    isLoading,
+    error
+  } = useBlog({
+    onSuccess(message) {
+      toast.success(message, toastConfig)
+    },
+    onError(error) {
+      toast.error(error, toastConfig)
+    },
+  });
+
+  const {
+    getAll: getTags,
+    isLoading: isTagsLoading
+  } = useTags();
+
+  const router = useRouter();
+
+  // Methods
+
+  const getPosts = async (pageNum: number = 1, pageLimit: number = 10) => {
     try {
-      if (editingId) {
-        blogStorage.update(editingId, data)
-        setEditingId(null)
+      const response = await getAll(pageLimit, pageNum);
+
+      // Filter out items without id
+      const validPosts = response.data
+        .filter((post): post is DisplayBlog => !!post.id)
+
+      if (pageNum === 1) {
+        setPosts(validPosts)
       } else {
-        blogStorage.create(data)
+        setPosts((prev) => [...prev, ...validPosts])
       }
-      loadPosts()
-      setShowForm(false)
-    } finally {
-      setLoading(false)
+
+      setHasNextPage(response.hasNextPage)
+    } catch {
+      toast.error(
+        `Failed! ${error}`,
+        {
+          position: "top-center",
+        }
+      )
     }
   }
 
-  const handleDelete = (id: string) => {
-    blogStorage.delete(id)
-    loadPosts()
+  const loadTags = useCallback(async (search: string = "") => {
+    const response = await getTags(50, 1, search)
+    setAvailableTags(response.data.filter(t => !selectedTags.includes(t.name)))
+  }, [getTags, selectedTags])
+
+  // Lifecycle methods
+  useEffect(() => {
+    getPosts(1, limit)
+  }, [])
+
+  useEffect(() => {
+    loadTags(tagSearch)
+  }, [tagSearch, loadTags])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tagDropdownRef.current && !tagDropdownRef.current.contains(event.target as Node)) {
+        setIsTagDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const handleSubmit = async (data: Omit<BlogSchema, "id">) => {
+    if (editingId) {
+      await update(editingId, data);
+      setEditingId(null)
+    } else {
+      console.log(data, user?.id)
+      await create({
+        createdBy: { id: user?.id },
+        ...data
+      });
+    }
+
+    getPosts(1, limit)
+    setTimeout(() => {
+      setShowForm(false);
+      router.refresh()
+    }, 1000);
+  }
+
+  const handleDelete = async (id: string) => {
+    await _delete(id);
+
+    getPosts(1, limit)
+  }
+
+  const handleLimitChange = () => {
+    const newLimit = parseInt(tempLimit) || 10
+    setLimit(newLimit)
+    setPage(1)
+    getPosts(1, newLimit)
+  }
+
+  const handleNextPage = () => {
+    const nextPage = page + 1
+    setPage(nextPage)
+    getPosts(nextPage, limit)
   }
 
   const editingItem = editingId ? posts.find((p) => p.id === editingId) : undefined
@@ -56,6 +166,7 @@ export default function BlogAdmin() {
         <Button
           onClick={() => {
             setEditingId(null)
+            setSelectedTags([])
             setShowForm(!showForm)
           }}
           className="gap-2"
@@ -68,11 +179,17 @@ export default function BlogAdmin() {
       {showForm && (
         <div className="bg-card border border-border rounded-lg p-6 mb-8 max-w-3xl">
           <h3 className="text-lg font-semibold mb-6">{editingId ? "Edit Post" : "New Blog Post"}</h3>
-          <BlogForm initial={editingItem} onSubmit={handleSubmit} isLoading={loading} />
+          <BlogForm 
+            initial={editingItem} 
+            onSubmit={handleSubmit} 
+            isLoading={isLoading}
+            selectedTags={selectedTags}
+            onTagsChange={setSelectedTags}
+          />
         </div>
       )}
 
-      <DataTable<BlogPost>
+      <DataTable<DisplayBlog>
         data={posts}
         columns={[
           { key: "title", label: "Title" },
@@ -85,30 +202,41 @@ export default function BlogAdmin() {
               </span>
             ),
           },
-          {
-            key: "tags",
-            label: "Tags",
-            render: (value) => (
-              <div className="flex gap-1 flex-wrap">
-                {(value as string[]).slice(0, 2).map((tag) => (
-                  <span key={tag} className="bg-accent/10 px-2 py-1 rounded text-xs">
-                    {tag}
-                  </span>
-                ))}
-                {(value as string[]).length > 2 && (
-                  <span className="text-xs text-muted-foreground">+{(value as string[]).length - 2}</span>
-                )}
-              </div>
-            ),
-          },
         ]}
         onEdit={(item) => {
           setEditingId(item.id)
           setShowForm(true)
         }}
         onDelete={handleDelete}
-        loading={loading}
+        loading={isLoading}
       />
+
+      {/* Pagination Controls */}
+      <div className="mt-8 space-y-4">
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-medium">Items per page:</label>
+          <input
+            type="number"
+            min="1"
+            max="100"
+            value={tempLimit}
+            onChange={(e) => setTempLimit(e.target.value)}
+            onBlur={handleLimitChange}
+            onKeyPress={(e) => e.key === "Enter" && handleLimitChange()}
+            className="w-20 px-3 py-2 border border-border rounded-md text-sm"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">
+            Page {page} • Showing {posts.length} items
+          </span>
+          {hasNextPage && (
+            <Button onClick={handleNextPage} disabled={isLoading} size="sm">
+              Load More
+            </Button>
+          )}
+        </div>
+      </div>
     </Container>
   )
 }

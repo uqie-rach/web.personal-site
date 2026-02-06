@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Section } from "@/components/section"
@@ -5,6 +8,8 @@ import { Container } from "@/components/container"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Calendar } from "lucide-react"
 import Link from "next/link"
+import { useBlog } from "@/hooks/use-blog"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface BlogPostProps {
   params: Promise<{
@@ -12,68 +17,49 @@ interface BlogPostProps {
   }>
 }
 
-export default async function BlogPost({ params }: BlogPostProps) {
-  // Sample blog post data - in production, fetch from database or file system
-  const posts: Record<string, any> = {
-    "building-scalable-applications": {
-      title: "Building Scalable Applications with Next.js",
-      timestamp: "Dec 15, 2024",
-      readTime: 8,
-      author: "Uqie",
-      content: `
-        <h2>Introduction</h2>
-        <p>
-          Building scalable applications requires careful planning and architectural decisions. 
-          Next.js provides powerful tools to help you create applications that grow with your needs.
-        </p>
-        
-        <h2>Server Components</h2>
-        <p>
-          React Server Components revolutionize how we think about data fetching and rendering. 
-          They allow you to fetch data directly in components without creating API routes.
-        </p>
-        
-        <h3>Benefits</h3>
-        <ul>
-          <li>Direct database access</li>
-          <li>Reduced bundle size</li>
-          <li>Better security</li>
-          <li>Simplified data fetching</li>
-        </ul>
-        
-        <h2>Caching Strategies</h2>
-        <p>
-          Implementing proper caching is crucial for performance. Next.js offers multiple caching layers
-          including static generation, incremental static regeneration, and dynamic rendering.
-        </p>
-      `,
-    },
-    "react-performance-optimization": {
-      title: "React Performance Optimization Tips",
-      timestamp: "Dec 10, 2024",
-      readTime: 6,
-      author: "Uqie",
-      content: `
-        <h2>Performance Matters</h2>
-        <p>
-          React applications can become slow as they grow. Understanding performance profiling and optimization
-          techniques is essential for maintaining responsive applications.
-        </p>
-        
-        <h2>Key Optimization Techniques</h2>
-        <h3>Code Splitting</h3>
-        <p>Break your application into smaller chunks that load only when needed.</p>
-        
-        <h3>Memoization</h3>
-        <p>Use React.memo and useMemo to prevent unnecessary re-renders.</p>
-        
-        <h3>Lazy Loading</h3>
-        <p>Defer loading of components and assets until they're needed.</p>
-      `,
-    },
+export default function BlogPost({ params }: BlogPostProps) {
+  const [slug, setSlug] = useState<string>("")
+  const [post, setPost] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  
+  const { getById } = useBlog()
+
+  useEffect(() => {
+    params.then((p) => {
+      setSlug(p.slug)
+    })
+  }, [params])
+
+  useEffect(() => {
+    if (slug) {
+      getById(slug).then((data) => {
+        setPost(data)
+        setLoading(false)
+      })
+    }
+  }, [slug, getById])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <Section className="pt-32 pb-12 bg-muted/30">
+          <Container className="max-w-3xl">
+            <Skeleton className="h-8 w-32 mb-6" />
+            <Skeleton className="h-10 w-full mb-4" />
+            <Skeleton className="h-6 w-64 mb-2" />
+            <Skeleton className="h-4 w-48" />
+          </Container>
+        </Section>
+        <Section>
+          <Container className="max-w-3xl">
+            <Skeleton className="h-64 w-full" />
+          </Container>
+        </Section>
+        <Footer />
+      </div>
+    )
   }
-  let slug = (await params).slug;
-  const post = posts[slug]
 
   if (!post) {
     return (
@@ -88,6 +74,10 @@ export default async function BlogPost({ params }: BlogPostProps) {
       </div>
     )
   }
+
+  // Calculate read time (approximate: 200 words per minute)
+  const wordCount = post.content?.split(/\s+/).length || 0
+  const readTime = Math.max(1, Math.ceil(wordCount / 200))
 
   return (
     <div className="min-h-screen bg-background">
@@ -108,12 +98,24 @@ export default async function BlogPost({ params }: BlogPostProps) {
           <div className="flex flex-col sm:flex-row gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Calendar size={16} />
-              {post.timestamp}
+              {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+              }) : new Date(post.createdAt).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+              })}
             </div>
             <div className="hidden sm:block">•</div>
-            <div>{post.readTime} min read</div>
-            <div className="hidden sm:block">•</div>
-            <div>By {post.author}</div>
+            <div>{readTime} min read</div>
+            {post.createdBy && (
+              <>
+                <div className="hidden sm:block">•</div>
+                <div>By {post.createdBy.firstName} {post.createdBy.lastName}</div>
+              </>
+            )}
           </div>
         </Container>
       </Section>
@@ -125,12 +127,25 @@ export default async function BlogPost({ params }: BlogPostProps) {
             <div className="prose-sm md:prose space-y-6" dangerouslySetInnerHTML={{ __html: post.content }} />
           </article>
 
+          {/* Tags */}
+          {post.tags && (
+            <div className="mt-8 flex flex-wrap gap-2">
+              {post.tags.split(",").map((tag: string) => (
+                <span key={tag} className="bg-accent/10 px-3 py-1 rounded-full text-sm">
+                  {tag.trim()}
+                </span>
+              ))}
+            </div>
+          )}
+
           {/* Article Footer */}
           <div className="mt-16 pt-8 border-t border-border">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Written by</p>
-                <p className="font-semibold text-foreground">{post.author}</p>
+                <p className="font-semibold text-foreground">
+                  {post.createdBy?.firstName} {post.createdBy?.lastName}
+                </p>
               </div>
               <Link href="/blog">
                 <Button>Back to Blog</Button>

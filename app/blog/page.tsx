@@ -13,14 +13,15 @@ import { Button } from "@/components/ui/button"
 import { useBlog } from "@/hooks/use-blog"
 import { Blog } from "@/lib/schemas"
 
-interface BlogPost {
+interface BlogListItem {
+  id: string
   slug: string
   title: string
   description: string
-  timestamp: string
-  readTime: number
-  category: string
-  categorySlug: string
+  tags: string
+  published: boolean
+  publishedAt?: string
+  createdAt: string
 }
 
 const POSTS_PER_PAGE = 6
@@ -29,8 +30,9 @@ export default function BlogPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [allCategories, setAllCategories] = useState<string[] | []>([]);
-  const [blogs, setBlogs] = useState<Blog[] | []>([])
+  const [allCategories, setAllCategories] = useState<string[]>([])
+  const [blogs, setBlogs] = useState<Blog[]>([])
+  const [loading, setLoading] = useState(true)
 
   const { getAll } = useBlog()
 
@@ -40,7 +42,9 @@ export default function BlogPage() {
         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         post.description.toLowerCase().includes(searchQuery.toLowerCase())
 
-      const matchesCategory = !selectedCategory || post.tags.toLowerCase() === selectedCategory
+      // tags is a comma-separated string
+      const postTags = post.tags ? post.tags.split(",").map(t => t.trim().toLowerCase()) : []
+      const matchesCategory = !selectedCategory || postTags.includes(selectedCategory.toLowerCase())
 
       return matchesSearch && matchesCategory
     })
@@ -48,10 +52,26 @@ export default function BlogPage() {
 
   useEffect(() => {
     getAll()
-      .then(res => {
-        setBlogs(res)
-        setAllCategories(res.map(r => r.tags))
-        // setSelectedCategory(null)
+      .then((res) => {
+        const data = res.data || []
+        setBlogs(data)
+        // Extract unique categories from tags (comma-separated string)
+        const categoriesSet = new Set<string>()
+        data.forEach((blog: Blog) => {
+          if (blog.tags) {
+            blog.tags.split(",").forEach((tag: string) => {
+              const trimmed = tag.trim()
+              if (trimmed) {
+                categoriesSet.add(trimmed)
+              }
+            })
+          }
+        })
+        setAllCategories(Array.from(categoriesSet))
+        setLoading(false)
+      })
+      .catch(() => {
+        setLoading(false)
       })
   }, [])
 
@@ -123,7 +143,7 @@ export default function BlogPage() {
                     >
                       All Posts
                     </button>
-                    {allCategories && allCategories.map((cat) => {
+                    {allCategories.map((cat) => {
                       return (
                         <button
                           key={cat.toLowerCase()}
@@ -158,11 +178,29 @@ export default function BlogPage() {
           {/* Blog Grid */}
           <Section>
             <Container>
-              {paginatedPosts.length > 0 ? (
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="p-6 rounded-lg border border-border bg-card">
+                      <div className="h-6 w-3/4 bg-muted rounded mb-4" />
+                      <div className="h-4 w-full bg-muted rounded mb-2" />
+                      <div className="h-4 w-2/3 bg-muted rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : paginatedPosts.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 animate-fade-in">
                     {paginatedPosts.map((post) => (
-                      <BlogCard key={post.slug} {...post} />
+                      <BlogCard
+                        key={post.id}
+                        id={post.id ?? ""}
+                        slug={post.slug}
+                        title={post.title}
+                        description={post.description}
+                        publishedAt={post.publishedAt}
+                        category={post.tags?.split(",")[0]?.trim()}
+                      />
                     ))}
                   </div>
 
