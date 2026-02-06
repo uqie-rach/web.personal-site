@@ -13,20 +13,23 @@ export function usePortfolio(options?: UsePortfolioOptions) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const getAll = useCallback(async () => {
+  const getAll = useCallback(async (limit = 10, page = 1) => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await apiClient.get<Portfolio[]>("/portfolio")
-      if (!response.success) {
-        throw new Error(response.error || "Failed to fetch portfolio items")
+      const response = await apiClient.get<Portfolio[]>(`/portfolios?limit=${limit}&page=${page}`)
+      if (!response.ok) {
+        throw new Error(response.message || "Failed to fetch portfolio items")
       }
-      return response.data || []
+      return {
+        data: response.data || [],
+        hasNextPage: (response.meta as any)?.hasNextPage || false,
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to fetch portfolio items"
       setError(message)
       options?.onError?.(message)
-      return []
+      return { data: [], hasNextPage: false }
     } finally {
       setIsLoading(false)
     }
@@ -37,11 +40,11 @@ export function usePortfolio(options?: UsePortfolioOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.get<Portfolio>(`/portfolio/${id}`)
-        if (!response.success) {
-          throw new Error(response.error || "Failed to fetch portfolio item")
+        const response = await apiClient.get<Portfolio>(`/portfolios/${id}`)
+        if (!response.ok) {
+          throw new Error(response.message || "Failed to fetch portfolio item")
         }
-        return response.data
+        return response?.data
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to fetch portfolio item"
         setError(message)
@@ -55,16 +58,20 @@ export function usePortfolio(options?: UsePortfolioOptions) {
   )
 
   const create = useCallback(
-    async (data: Portfolio) => {
+    async (data: Portfolio & {
+      ownedBy: {
+        id: string | undefined
+      }
+    }) => {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.post<Portfolio>("/portfolio", data)
-        if (!response.success) {
-          throw new Error(response.error || "Failed to create portfolio item")
+        const response = await apiClient.post<Portfolio>("/portfolios", data)
+        if (!response.ok) {
+          throw new Error(response.message || "Failed to create portfolio item")
         }
         options?.onSuccess?.("Portfolio item created successfully")
-        return response.data
+        return response?.data
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to create portfolio item"
         setError(message)
@@ -82,12 +89,12 @@ export function usePortfolio(options?: UsePortfolioOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.put<Portfolio>(`/portfolio/${id}`, data)
-        if (!response.success) {
-          throw new Error(response.error || "Failed to update portfolio item")
+        const response = await apiClient.patch<Portfolio>(`/portfolios/${id}`, data)
+        if (!response.ok) {
+          throw new Error(response.message || "Failed to update portfolio item")
         }
         options?.onSuccess?.("Portfolio item updated successfully")
-        return response.data
+        return response?.data
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to update portfolio item"
         setError(message)
@@ -105,9 +112,10 @@ export function usePortfolio(options?: UsePortfolioOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.delete<{ success: boolean }>(`/portfolio/${id}`)
-        if (!response.success) {
-          throw new Error(response.error || "Failed to delete portfolio item")
+
+        const response = await apiClient.delete<{ success: boolean }>(`/portfolios/${id}`)
+        if (!response.ok) {
+          throw new Error(response.message || "Failed to delete portfolio item")
         }
         options?.onSuccess?.("Portfolio item deleted successfully")
         return true

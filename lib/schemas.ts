@@ -2,15 +2,15 @@ import { z } from "zod"
 
 // Portfolio Schema
 export const portfolioSchema = z.object({
-  id: z.string().optional(),
+  id: z.string(),
   title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
   description: z.string().min(1, "Description is required").max(500, "Description must be less than 500 characters"),
-  image: z.string().min(1, "Image is required"),
+  image: z.any(),
   technologies: z.array(z.string()).min(1, "At least one technology is required"),
   liveUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   repoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   featured: z.boolean().default(false),
-  order: z.number().default(0),
+  order: z.number().optional(),
 })
 
 export type Portfolio = z.infer<typeof portfolioSchema>
@@ -27,9 +27,7 @@ export const experienceSchema = z.object({
   workStyle: z.enum(["Full-time", "Part-time", "Contract", "Freelance"], {
     errorMap: () => ({ message: "Please select a valid work style" }),
   }),
-  description: z.array(z.string()).min(1, "Description is required").max(500, "Description must be less than 500 characters").default([]),
-  // description: z.string(),
-  accomplishments: z.array(z.string()).default([]),
+  accomplishments: z.array(z.string().max(200, "Max 200 characters")).default([]),
   order: z.number().default(0),
 })
 

@@ -2,30 +2,66 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { X, Upload } from "lucide-react"
-import type { BlogPost } from "@/lib/types"
+import { X, Upload, Search, ChevronDown, ChevronUp } from "lucide-react"
+import type { Blog } from "@/lib/schemas"
+import { useTags, type Tag } from "@/hooks/use-tags"
 
 interface BlogFormProps {
-  initial?: BlogPost
-  onSubmit: (data: Omit<BlogPost, "id" | "createdAt" | "updatedAt">) => void
+  initial?: Blog
+  onSubmit: (data: Omit<Blog, "id" | "createdAt" | "updatedAt">) => void
   isLoading?: boolean
+  selectedTags?: string[]
+  onTagsChange?: (tags: string[]) => void
 }
 
-export function BlogForm({ initial, onSubmit, isLoading = false }: BlogFormProps) {
+export function BlogForm({ initial, onSubmit, isLoading = false, selectedTags = [], onTagsChange }: BlogFormProps) {
   const [title, setTitle] = useState(initial?.title || "")
   const [slug, setSlug] = useState(initial?.slug || "")
-  const [excerpt, setExcerpt] = useState(initial?.excerpt || "")
+  const [description, setDescription] = useState(initial?.description || "")
   const [content, setContent] = useState(initial?.content || "")
   const [coverImage, setCoverImage] = useState(initial?.coverImage || "")
   const [coverPreview, setCoverPreview] = useState(initial?.coverImage || "")
-  const [tags, setTags] = useState<string[]>(initial?.tags || [])
-  const [tagInput, setTagInput] = useState("")
   const [published, setPublished] = useState(initial?.published || false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Tags search state
+  const [tagSearch, setTagSearch] = useState("")
+  const [availableTags, setAvailableTags] = useState<Tag[]>([])
+  const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false)
+  const tagDropdownRef = useRef<HTMLDivElement>(null)
+
+  const { getAll: getTags, isLoading: isTagsLoading } = useTags()
+
+  useEffect(() => {
+    if (initial?.tags) {
+      const initialTags = initial.tags.split(",").map(t => t.trim())
+      onTagsChange?.(initialTags)
+    }
+  }, [initial?.tags, onTagsChange])
+
+  useEffect(() => {
+    loadTags(tagSearch)
+  }, [tagSearch])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tagDropdownRef.current && !tagDropdownRef.current.contains(event.target as Node)) {
+        setIsTagDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const loadTags = async (search: string = "") => {
+    const response = await getTags(50, 1, search)
+    setAvailableTags(response.data.filter(t => !selectedTags.includes(t.name)))
+  }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -40,15 +76,16 @@ export function BlogForm({ initial, onSubmit, isLoading = false }: BlogFormProps
     }
   }
 
-  const handleAddTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags([...tags, tagInput.trim()])
-      setTagInput("")
+  const handleAddTag = (tagName: string) => {
+    if (tagName.trim() && !selectedTags.includes(tagName.trim())) {
+      onTagsChange?.([...selectedTags, tagName.trim()])
+      setTagSearch("")
+      loadTags("")
     }
   }
 
   const handleRemoveTag = (tag: string) => {
-    setTags(tags.filter((t) => t !== tag))
+    onTagsChange?.(selectedTags.filter((t) => t !== tag))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,12 +93,13 @@ export function BlogForm({ initial, onSubmit, isLoading = false }: BlogFormProps
     onSubmit({
       slug: slug || title.toLowerCase().replace(/\s+/g, "-"),
       title,
-      excerpt,
+      description,
       content,
       coverImage,
-      tags,
+      tags: selectedTags.join(","),
       published,
-      publishedAt: published ? new Date() : undefined,
+      publishedAt: published ? new Date().toISOString() : undefined,
+      order: initial?.order ?? 0,
     })
   }
 
@@ -120,13 +158,13 @@ export function BlogForm({ initial, onSubmit, isLoading = false }: BlogFormProps
         </div>
       </div>
 
-      {/* Excerpt */}
+      {/* Description */}
       <div>
-        <Label htmlFor="excerpt">Excerpt *</Label>
+        <Label htmlFor="description">Description *</Label>
         <textarea
-          id="excerpt"
-          value={excerpt}
-          onChange={(e) => setExcerpt(e.target.value)}
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           placeholder="Short summary of the post"
           className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground mt-2 resize-none"
           rows={2}
@@ -149,27 +187,80 @@ export function BlogForm({ initial, onSubmit, isLoading = false }: BlogFormProps
         <p className="text-xs text-muted-foreground mt-2">Supports Markdown formatting</p>
       </div>
 
-      {/* Tags */}
-      <div>
+      {/* Tags - Searchable Select */}
+      <div ref={tagDropdownRef} className="relative">
         <Label>Tags</Label>
-        <div className="flex gap-2 mt-2 mb-3">
-          <Input
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())}
-            placeholder="Add tag (Enter to add)"
-            className="flex-1"
-          />
-          <Button type="button" onClick={handleAddTag} variant="outline">
-            Add
-          </Button>
+        <div className="relative mt-2">
+          <div
+            className="border border-border rounded-md bg-background cursor-pointer"
+            onClick={() => setIsTagDropdownOpen(!isTagDropdownOpen)}
+          >
+            <div className="flex items-center px-3 py-2">
+              <Search size={16} className="text-muted-foreground mr-2" />
+              <input
+                type="text"
+                value={tagSearch}
+                onChange={(e) => {
+                  setTagSearch(e.target.value)
+                  if (!isTagDropdownOpen) setIsTagDropdownOpen(true)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    if (tagSearch.trim()) {
+                      handleAddTag(tagSearch)
+                    }
+                  }
+                }}
+                placeholder="Search or add tag (Enter to add)..."
+                className="flex-1 bg-transparent outline-none text-sm"
+              />
+              {isTagDropdownOpen ? (
+                <ChevronUp size={16} className="text-muted-foreground" />
+              ) : (
+                <ChevronDown size={16} className="text-muted-foreground" />
+              )}
+            </div>
+          </div>
+
+          {/* Dropdown */}
+          {isTagDropdownOpen && (tagSearch || availableTags.length > 0) && (
+            <div className="absolute z-10 w-full mt-1 border border-border rounded-md bg-background shadow-lg max-h-48 overflow-y-auto">
+              {isTagsLoading ? (
+                <div className="px-3 py-2 text-sm text-muted-foreground">Loading...</div>
+              ) : availableTags.length > 0 ? (
+                availableTags.map((tag) => (
+                  <div
+                    key={tag.id}
+                    className="px-3 py-2 cursor-pointer hover:bg-muted"
+                    onClick={() => handleAddTag(tag.name)}
+                  >
+                    {tag.name}
+                  </div>
+                ))
+              ) : tagSearch ? (
+                <div
+                  className="px-3 py-2 cursor-pointer hover:bg-muted text-sm"
+                  onClick={() => handleAddTag(tagSearch)}
+                >
+                  Press Enter to add "{tagSearch}"
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
+
+        {/* Selected Tags */}
+        {selectedTags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {selectedTags.map((tag) => (
               <div key={tag} className="inline-flex items-center gap-2 bg-accent/10 px-3 py-1 rounded-full text-sm">
                 {tag}
-                <button type="button" onClick={() => handleRemoveTag(tag)} className="hover:text-destructive">
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTag(tag)}
+                  className="hover:text-destructive"
+                >
                   <X size={14} />
                 </button>
               </div>

@@ -7,6 +7,7 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 import { AdminHeader } from "@/components/admin-header"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { useAuthStore } from "@/lib/store/auth-store"
+import { Toaster } from "sonner"
 
 export default function AdminLayout({
   children,
@@ -15,15 +16,17 @@ export default function AdminLayout({
 }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const { isAuthenticated, hasHydrated} = useAuthStore();
 
   useEffect(() => {
-    // Check authentication after hydration
-    setIsLoading(false)
+    if (!hasHydrated) return
+
     if (!isAuthenticated) {
-      router.push("/admin/login")
+      router.replace("/login")
     }
-  }, [isAuthenticated, router])
+
+    setIsLoading(false)
+  }, [hasHydrated, isAuthenticated, router])
 
   if (isLoading) {
     return (
@@ -44,6 +47,7 @@ export default function AdminLayout({
           <AdminHeader />
           <main className="flex-1 overflow-y-auto bg-background">{children}</main>
         </div>
+        <Toaster />
       </div>
     </SidebarProvider>
   )

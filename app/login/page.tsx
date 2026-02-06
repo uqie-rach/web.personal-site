@@ -21,11 +21,12 @@ export default function LoginPage() {
     setError("")
     setIsLoading(true)
 
-    const success = login(email, password)
+    const success = await login(email, password)
+
     if (success) {
       router.push("/admin")
     } else {
-      setError("Invalid credentials. Try admin@portfolio.com / admin123")
+      setError("Invalid credentials")
     }
     setIsLoading(false)
   }
@@ -43,7 +44,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@portfolio.com"
+              placeholder="Email..."
               className="mt-2"
               required
               disabled={isLoading}

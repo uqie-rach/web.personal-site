@@ -20,7 +20,7 @@ export function ExperienceTimeline() {
 
   useEffect(() => {
     getAll().then((res) => {
-      setExps(res)
+      setExps(res.data)
     })
   }, [])
 
@@ -82,7 +82,7 @@ export function ExperienceTimeline() {
 
                   {/* Description */}
                   <ul className="space-y-2">
-                    {exp?.description && exp?.description.map((desc, i) => (
+                    {exp?.accomplishments && exp?.accomplishments.map((desc, i) => (
                       <li key={i} className="text-muted-foreground text-sm flex gap-3">
                         <span className="text-primary mt-1">→</span>
                         <span>{desc}</span>

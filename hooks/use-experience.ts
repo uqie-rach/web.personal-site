@@ -13,21 +13,24 @@ export function useExperience(options?: UseExperienceOptions) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const getAll = useCallback(async () => {
+  const getAll = useCallback(async (limit = 10, page = 1) => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await apiClient.get<Experience[]>("/experiences")
-      console.log(response?.data?.data)
-      if (!response.success) {
-        throw new Error(response.error || "Failed to fetch experience items")
+      const response = await apiClient.get<Experience[]>(`/experiences?limit=${limit}&page=${page}`)
+
+      if (!response.ok) {
+        throw new Error(response.message || "Failed to fetch experience items")
       }
-      return response?.data?.data || []
+      return {
+        data: response.data || [],
+        hasNextPage: (response.meta as any)?.hasNextPage || false,
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to fetch experience items"
       setError(message)
       options?.onError?.(message)
-      return []
+      return { data: [], hasNextPage: false }
     } finally {
       setIsLoading(false)
     }
@@ -39,8 +42,8 @@ export function useExperience(options?: UseExperienceOptions) {
       setError(null)
       try {
         const response = await apiClient.get<Experience>(`/experiences/${id}`)
-        if (!response.success) {
-          throw new Error(response.error || "Failed to fetch experience item")
+        if (!response.ok) {
+          throw new Error(response.message || "Failed to fetch experience item")
         }
         return response.data
       } catch (err) {
@@ -49,20 +52,28 @@ export function useExperience(options?: UseExperienceOptions) {
         options?.onError?.(message)
         return null
       } finally {
-        setIsLoading(false)
+        setTimeout(() => {
+          setIsLoading(false)
+        }, 1000);
       }
     },
     [options],
   )
 
   const create = useCallback(
-    async (data: Experience) => {
+    async (data: Experience & {
+      ownedBy: {
+        id?: string
+      }
+    }) => {
       setIsLoading(true)
       setError(null)
       try {
         const response = await apiClient.post<Experience>("/experiences", data)
-        if (!response.success) {
-          throw new Error(response.error || "Failed to create experience item")
+        console.log('from hooks', response)
+        if (!response.ok) {
+          console.log('not ok')
+          throw new Error(response.message || "Failed to create experience item")
         }
         options?.onSuccess?.("Experience item created successfully")
         return response.data
@@ -83,9 +94,9 @@ export function useExperience(options?: UseExperienceOptions) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await apiClient.put<Experience>(`/experiences/${id}`, data)
-        if (!response.success) {
-          throw new Error(response.error || "Failed to update experience item")
+        const response = await apiClient.patch<Experience>(`/experiences/${id}`, data)
+        if (!response.ok) {
+          throw new Error(response.message || "Failed to update experience item")
         }
         options?.onSuccess?.("Experience item updated successfully")
         return response.data
@@ -107,8 +118,8 @@ export function useExperience(options?: UseExperienceOptions) {
       setError(null)
       try {
         const response = await apiClient.delete<{ success: boolean }>(`/experiences/${id}`)
-        if (!response.success) {
-          throw new Error(response.error || "Failed to delete experience item")
+        if (!response.ok) {
+          throw new Error(response.message || "Failed to delete experience item")
         }
         options?.onSuccess?.("Experience item deleted successfully")
         return true

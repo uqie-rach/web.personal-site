@@ -3,6 +3,7 @@ import { Calendar, ArrowRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 interface BlogCardProps {
+  id: string
   slug: string
   title: string
   description: string
@@ -11,9 +12,9 @@ interface BlogCardProps {
   category?: string
 }
 
-export function BlogCard({ slug, title, description, publishedAt, readTime = 5, category }: BlogCardProps) {
+export function BlogCard({ id, title, description, publishedAt, readTime = 5, category }: BlogCardProps) {
   return (
-    <Link href={`/blog/${slug}`}>
+    <Link href={`/blog/${id}`}>
       <article className="group cursor-pointer p-6 rounded-lg border border-border bg-card hover:bg-muted/50 transition-all duration-300 hover:border-primary/50 hover:shadow-md">
         <div className="flex flex-col h-full justify-between">
           <div>

@@ -7,20 +7,22 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Upload } from "lucide-react"
-import type { TechStack } from "@/lib/types"
+import type { TechStack } from "@/lib/schemas"
+import Image from "next/image"
 
 interface TechStackFormProps {
   initial?: TechStack
   onSubmit: (data: Omit<TechStack, "id" | "createdAt" | "updatedAt">) => void
   isLoading?: boolean
+  categories?: string[]
 }
 
-export function TechStackForm({ initial, onSubmit, isLoading = false }: TechStackFormProps) {
+export function TechStackForm({ initial, onSubmit, isLoading = false, categories = [] }: TechStackFormProps) {
   const [name, setName] = useState(initial?.name || "")
-  const [category, setCategory] = useState<TechStack["category"]>(initial?.category || "frontend")
+  const [category, setCategory] = useState<TechStack["category"]>(initial?.category || (categories[0] as TechStack["category"]) || "Frontend")
   const [icon, setIcon] = useState(initial?.icon || "")
   const [iconPreview, setIconPreview] = useState(initial?.icon || "")
-  const [proficiency, setProficiency] = useState<TechStack["proficiency"]>(initial?.proficiency || "intermediate")
+  const [proficiency, setProficiency] = useState<TechStack["proficiency"]>(initial?.proficiency || "Beginner")
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,6 +45,7 @@ export function TechStackForm({ initial, onSubmit, isLoading = false }: TechStac
       category,
       icon,
       proficiency,
+      order: initial?.order ?? 0,
     })
   }
 
@@ -65,8 +68,14 @@ export function TechStackForm({ initial, onSubmit, isLoading = false }: TechStac
           </div>
 
           {iconPreview && (
-            <div className="w-24 h-24 rounded-lg overflow-hidden border border-border flex-shrink-0 flex items-center justify-center bg-muted/50">
-              <img src={iconPreview || "/placeholder.svg"} alt="Preview" className="w-16 h-16 object-contain" />
+            <div className="w-32 h-32 rounded-lg overflow-hidden border border-border shrink-0 flex items-center justify-center bg-muted/50">
+              <Image
+                src={iconPreview ?? "public/placeholder.svg"}
+                alt="Preview"
+                className="w-full h-full object-cover"
+                width={100}
+                height={100}
+              />
             </div>
           )}
         </div>
@@ -95,10 +104,11 @@ export function TechStackForm({ initial, onSubmit, isLoading = false }: TechStac
           className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground mt-2"
           required
         >
-          <option value="frontend">Frontend</option>
-          <option value="backend">Backend</option>
-          <option value="design">Design</option>
-          <option value="devops">DevOps</option>
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -112,10 +122,10 @@ export function TechStackForm({ initial, onSubmit, isLoading = false }: TechStac
           className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground mt-2"
           required
         >
-          <option value="beginner">Beginner</option>
-          <option value="intermediate">Intermediate</option>
-          <option value="advanced">Advanced</option>
-          <option value="expert">Expert</option>
+          <option value="Beginner">Beginner</option>
+          <option value="Intermediate">Intermediate</option>
+          <option value="Advanced">Advanced</option>
+          <option value="Expert">Expert</option>
         </select>
       </div>
 

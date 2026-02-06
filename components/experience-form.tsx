@@ -7,27 +7,47 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { X } from "lucide-react"
-import type { Experience } from "@/lib/types"
+import type { Experience as ExperienceSchema } from "@/lib/schemas"
 
 interface ExperienceFormProps {
-  initial?: Experience
-  onSubmit: (data: Omit<Experience, "id" | "createdAt" | "updatedAt">) => void
+  initial?: ExperienceSchema
+  onSubmit: (data: Omit<ExperienceSchema, "id" | "createdAt" | "updatedAt">) => void
   isLoading?: boolean
 }
 
 export function ExperienceForm({ initial, onSubmit, isLoading = false }: ExperienceFormProps) {
-  const [role, setRole] = useState(initial?.role || "")
+  /**
+   * Local State
+   */
+  const [title, setTitle] = useState(initial?.title || "")
   const [company, setCompany] = useState(initial?.company || "")
   const [location, setLocation] = useState(initial?.location || "")
   const [startDate, setStartDate] = useState(
-    initial?.startDate ? new Date(initial.startDate).toISOString().split("T")[0] : "",
+    typeof initial?.startDate === 'string' 
+      ? initial.startDate.split('T')[0]
+      : initial?.startDate 
+        ? new Date(initial.startDate).toISOString().split("T")[0] 
+        : "",
   )
-  const [endDate, setEndDate] = useState(initial?.endDate ? new Date(initial.endDate).toISOString().split("T")[0] : "")
-  const [current, setCurrent] = useState(initial?.current || false)
+  const [endDate, setEndDate] = useState(
+    typeof initial?.endDate === 'string'
+      ? initial.endDate.split('T')[0]
+      : initial?.endDate
+        ? new Date(initial.endDate).toISOString().split("T")[0]
+        : ""
+  )
+  const [isCurrently, setIsCurrently] = useState(initial?.isCurrently || false)
   const [workStyle, setWorkStyle] = useState(initial?.workStyle || "")
   const [accomplishments, setAccomplishments] = useState<string[]>(initial?.accomplishments || [])
   const [accomplishmentInput, setAccomplishmentInput] = useState("")
 
+  /**
+   * Context Management / Custom Hooks
+   */
+
+  /**
+   * Functions
+   */
   const handleAddAccomplishment = () => {
     if (accomplishmentInput.trim()) {
       setAccomplishments([...accomplishments, accomplishmentInput.trim()])
@@ -40,16 +60,19 @@ export function ExperienceForm({ initial, onSubmit, isLoading = false }: Experie
   }
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+
     onSubmit({
-      role,
+
+      title,
       company,
       location,
-      startDate: new Date(startDate),
-      endDate: endDate ? new Date(endDate) : undefined,
-      current,
-      workStyle,
+      startDate,
+      endDate: endDate || undefined,
+      isCurrently,
+      workStyle: workStyle as "Full-time" | "Part-time" | "Contract" | "Freelance",
       accomplishments,
+      order: initial?.order ?? 0,
     })
   }
 
@@ -60,8 +83,8 @@ export function ExperienceForm({ initial, onSubmit, isLoading = false }: Experie
           <Label htmlFor="role">Job Title *</Label>
           <Input
             id="role"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             placeholder="Senior Developer"
             className="mt-2"
             required
@@ -125,7 +148,7 @@ export function ExperienceForm({ initial, onSubmit, isLoading = false }: Experie
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            disabled={current}
+            disabled={isCurrently}
             className="mt-2"
           />
         </div>
@@ -134,9 +157,9 @@ export function ExperienceForm({ initial, onSubmit, isLoading = false }: Experie
       <label className="flex items-center gap-3 cursor-pointer">
         <input
           type="checkbox"
-          checked={current}
+          checked={isCurrently}
           onChange={(e) => {
-            setCurrent(e.target.checked)
+            setIsCurrently(e.target.checked)
             if (e.target.checked) setEndDate("")
           }}
           className="w-4 h-4"

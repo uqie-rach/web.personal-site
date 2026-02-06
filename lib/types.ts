@@ -1,11 +1,19 @@
+import { Portfolio as PortfolioSchema } from "./schemas"
+
+export interface ImageType {
+  id: string
+  path: string
+  publicUrl: string
+}
+
 export interface Portfolio {
   id: string
   title: string
   description: string
-  image?: string
+  image?: ImageType
   techStacks: string[]
   liveUrl?: string
-  repositoryUrl?: string
+  repoUrl?: string
   featured: boolean
   createdAt: Date
   updatedAt: Date
@@ -13,14 +21,15 @@ export interface Portfolio {
 
 export interface Experience {
   id: string
-  role: string
+  title: string
   company: string
   location: string
   startDate: Date
   endDate?: Date
-  current: boolean
+  isCurrently: boolean
   workStyle: string
   accomplishments: string[]
+  order: number
   createdAt: Date
   updatedAt: Date
 }
@@ -42,7 +51,7 @@ export interface BlogPost {
 export interface TechStack {
   id: string
   name: string
-  category: "frontend" | "backend" | "design" | "devops"
+  category: string
   icon?: string
   proficiency: "beginner" | "intermediate" | "advanced" | "expert"
   createdAt: Date
@@ -56,4 +65,36 @@ export interface AdminUser {
   role: "admin" | "editor"
   createdAt: Date
   updatedAt: Date
+}
+
+export interface LoginResponse {
+  refreshToken: string
+  token: string
+  tokenExpires: string
+  user: User
+}
+
+export interface User {
+  id: string
+  email: string
+  provider: string
+  socialId: string
+  firstName: string
+  lastName: string
+  role: Role
+  status: Status
+  createdAt: Date
+  updatedAt: Date
+  deletedAt: Date | null
+  portfolios: PortfolioSchema[]
+}
+
+export interface Role {
+  id: string
+  name: string
+}
+
+export interface Status {
+  id: string
+  name: string
 }

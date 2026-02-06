@@ -5,44 +5,105 @@ import { Container } from "@/components/container"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/data-table"
 import { PortfolioForm } from "@/components/portfolio-form"
-import { portfolioStorage } from "@/lib/storage"
-import type { Portfolio } from "@/lib/types"
 import { Plus, X } from "lucide-react"
+import { useAuthStore } from "@/lib/store/auth-store"
+import { Portfolio as PortfolioType } from "@/lib/schemas"
+import { usePortfolio } from "@/hooks/use-portfolio"
+import { useRouter } from "next/navigation"
 
 export default function PortfolioAdmin() {
-  const [portfolios, setPortfolios] = useState<Portfolio[]>([])
+  const [portfolios, setPortfolios] = useState<PortfolioType[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(10)
+  const [hasNextPage, setHasNextPage] = useState(false)
+  const [tempLimit, setTempLimit] = useState("10")
 
-  useEffect(() => {
-    loadPortfolios()
-  }, [])
+  const { user } = useAuthStore();
 
-  const loadPortfolios = () => {
-    setPortfolios(portfolioStorage.getAll())
-  }
+  const {
+    getAll,
+    delete: deletePorto,
+    create,
+    update,
+    isLoading
+  } = usePortfolio();
 
-  const handleSubmit = (data: Omit<Portfolio, "id" | "createdAt" | "updatedAt">) => {
-    setLoading(true)
+  const router = useRouter()
+
+  const loadPortfolios = async (pageNum: number = 1, pageLimit: number = 10) => {
     try {
-      if (editingId) {
-        portfolioStorage.update(editingId, data)
-        setEditingId(null)
+      const response = await getAll(pageLimit, pageNum)
+      
+      if (pageNum === 1) {
+        setPortfolios(response.data)
       } else {
-        portfolioStorage.create(data)
+        setPortfolios((prev) => [...prev, ...response.data])
       }
-      loadPortfolios()
-      setShowForm(false)
-    } finally {
-      setLoading(false)
+      
+      setHasNextPage(response.hasNextPage)
+    } catch (err) {
+      console.error(err)
     }
   }
 
-  const handleDelete = (id: string) => {
-    portfolioStorage.delete(id)
-    loadPortfolios()
+  const handleSubmit = async (data: Omit<PortfolioType, "id" | "createdAt" | "updatedAt">) => {
+    try {
+      if (editingId) {
+        // Update portfolio -> insert new image
+        await update(editingId, data)
+        setEditingId(null)
+
+      } else {
+        const { order, ...rest } = data;
+
+        // Create new Portfolio
+        await create({
+          order: 0,
+          id: '',
+          ownedBy: { id: user?.id },
+          ...rest
+        })
+      }
+      loadPortfolios(1, limit)
+      setShowForm(false)
+
+      // refresh
+    } catch (err) {
+      console.error(err)
+    }
   }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deletePorto(id)
+      loadPortfolios(1, limit)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleLimitChange = () => {
+    const newLimit = parseInt(tempLimit) || 10
+    setLimit(newLimit)
+    setPage(1)
+    loadPortfolios(1, newLimit)
+  }
+
+  const handleNextPage = () => {
+    const nextPage = page + 1
+    setPage(nextPage)
+    loadPortfolios(nextPage, limit)
+  }
+
+  useEffect(() => {
+    loadPortfolios(1, limit)
+  }, [])
+
+  useEffect(() => {
+    loadPortfolios
+  }, [create, update, handleDelete])
 
   const editingItem = editingId ? portfolios.find((p) => p.id === editingId) : undefined
 
@@ -68,16 +129,16 @@ export default function PortfolioAdmin() {
       {showForm && (
         <div className="bg-card border border-border rounded-lg p-6 mb-8">
           <h3 className="text-lg font-semibold mb-6">{editingId ? "Edit Project" : "New Project"}</h3>
-          <PortfolioForm initial={editingItem} onSubmit={handleSubmit} isLoading={loading} />
+          <PortfolioForm initial={editingItem} onSubmit={handleSubmit} isLoading={isLoading} />
         </div>
       )}
 
-      <DataTable<Portfolio>
+      <DataTable<PortfolioType>
         data={portfolios}
         columns={[
           { key: "title", label: "Title" },
           {
-            key: "techStacks",
+            key: "technologies",
             label: "Technologies",
             render: (value) => (
               <div className="flex gap-1 flex-wrap">
@@ -106,9 +167,38 @@ export default function PortfolioAdmin() {
           setEditingId(item.id)
           setShowForm(true)
         }}
-        onDelete={handleDelete}
-        loading={loading}
+        onDelete={(id) => {
+          handleDelete(id)
+        }}
+        loading={isLoading}
       />
+
+      {/* Pagination Controls */}
+      <div className="mt-8 space-y-4">
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-medium">Items per page:</label>
+          <input
+            type="number"
+            min="1"
+            max="100"
+            value={tempLimit}
+            onChange={(e) => setTempLimit(e.target.value)}
+            onBlur={handleLimitChange}
+            onKeyPress={(e) => e.key === "Enter" && handleLimitChange()}
+            className="w-20 px-3 py-2 border border-border rounded-md text-sm"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">
+            Page {page} • Showing {portfolios.length} items
+          </span>
+          {hasNextPage && (
+            <Button onClick={handleNextPage} disabled={isLoading} size="sm">
+              Load More
+            </Button>
+          )}
+        </div>
+      </div>
     </Container>
   )
 }

@@ -1,8 +1,18 @@
 "use client"
 
+import { useState } from "react"
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Trash2, Edit2 } from "lucide-react"
 
 interface Column<T> {
@@ -26,8 +36,22 @@ export function DataTable<T extends { id: string }>({
   onDelete,
   loading = false,
 }: DataTableProps<T>) {
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+
+  const handleDelete = (id: string) => {
+    setDeleteId(id)
+  }
+
+  const confirmDelete = () => {
+    if (deleteId) {
+      onDelete?.(deleteId)
+      setDeleteId(null)
+    }
+  }
+
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
+    <>
+      <div className="border border-border rounded-lg overflow-hidden">
       <table className="w-full">
         <thead className="bg-muted/50 border-b border-border">
           <tr>
@@ -66,11 +90,7 @@ export function DataTable<T extends { id: string }>({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
-                            if (confirm("Are you sure?")) {
-                              onDelete(item.id)
-                            }
-                          }}
+                          onClick={() => handleDelete(item.id)}
                           disabled={loading}
                           className="hover:bg-destructive/10"
                         >
@@ -85,6 +105,24 @@ export function DataTable<T extends { id: string }>({
           )}
         </tbody>
       </table>
-    </div>
+      </div>
+
+      <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-2 justify-end">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive">
+              Delete
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

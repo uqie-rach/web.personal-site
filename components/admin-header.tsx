@@ -11,7 +11,7 @@ export function AdminHeader() {
 
   const handleLogout = () => {
     logout()
-    router.push("/admin/login")
+    router.push("/login")
   }
 
   return (
