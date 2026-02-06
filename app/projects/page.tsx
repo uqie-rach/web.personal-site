@@ -24,9 +24,9 @@ export default function ProjectsPage() {
   useEffect(() => {
     getAll()
       .then(res => {
-        const tempTechs = [...new Set(res.map(r => r.technologies).flat())]
+        const tempTechs = [...new Set(res.data.map(r => r.technologies).flat())]
         
-        setProjects(res)
+        setProjects(res.data)
         setAllTechs(tempTechs)
       })
   }, [])
