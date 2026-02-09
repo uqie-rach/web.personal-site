@@ -44,11 +44,9 @@ pipeline {
     stage('Deploy Web') {
       steps {
         sh """
-        ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST '
-            cd $APP_DIR &&
-            docker pull $REGISTRY/$IMAGE_NAME:$TAG &&
-            docker compose up -d --no-deps $SERVICE
-        '
+            cd /path/ke/docker-compose
+            docker compose pull web
+            docker compose up -d web
         """
       }
     }
