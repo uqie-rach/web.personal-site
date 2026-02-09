@@ -43,15 +43,13 @@ pipeline {
 
     stage('Deploy Web') {
       steps {
-        sshagent (credentials: [SSH_KEY]) {
-          sh """
-            ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST '
-              cd $APP_DIR &&
-              docker pull $REGISTRY/$IMAGE_NAME:$TAG &&
-              docker compose up -d --no-deps $SERVICE
-            '
-          """
-        }
+        sh """
+        ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST '
+            cd $APP_DIR &&
+            docker pull $REGISTRY/$IMAGE_NAME:$TAG &&
+            docker compose up -d --no-deps $SERVICE
+        '
+        """
       }
     }
   }
