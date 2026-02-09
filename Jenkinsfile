@@ -44,7 +44,7 @@ pipeline {
     stage('Deploy Web') {
       steps {
         sh """
-            cd /path/ke/docker-compose
+            cd /home/uqie/apps/personal-site
             docker compose pull web
             docker compose up -d web
         """
