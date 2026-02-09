@@ -7,6 +7,7 @@ pipeline {
     TAG = "${env.BUILD_NUMBER}"
     COMPOSE_PATH = "/home/uqie/apps/personal-site"
     DOCKERHUB_CREDS = "2d3f7809-6994-4ef0-a9ad-8dafe2e7cd7b"
+    VPS_HOST = "43.133.58.35"
   }
 
   stages {
@@ -42,14 +43,18 @@ pipeline {
       }
     }
 
-    stage('Deploy') {
+    stage('Deploy via SSH') {
       steps {
-        sh '''
-          cd $COMPOSE_PATH
-          export WEB_TAG=$TAG
-          docker compose -f docker-compose.prod.yml pull web
-          docker compose -f docker-compose.prod.yml up -d web
-        '''
+        sshagent(credentials: ['vps-ssh']) {
+          sh """
+            ssh -o StrictHostKeyChecking=no uqie@$VPS_HOST '
+              cd $APP_DIR &&
+              export WEB_TAG=$TAG &&
+              docker pull $REGISTRY/$IMAGE:$TAG &&
+              docker compose -f docker-compose.prod.yml up -d web
+            '
+          """
+        }
       }
     }
   }
