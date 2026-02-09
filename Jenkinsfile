@@ -30,7 +30,11 @@ pipeline {
     stage('Build Image') {
       steps {
         sh '''
-          docker build -t $REGISTRY/$IMAGE:$TAG .
+            docker buildx build \
+            --platform linux/amd64 \
+            -t $REGISTRY/$IMAGE:$TAG \
+            --push \
+            .
         '''
       }
     }
