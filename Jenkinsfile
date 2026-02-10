@@ -27,10 +27,15 @@ pipeline {
 
     stage('Build & Push Image') {
       steps {
-        withCredentials([file(credentialsId: 'personal-web-env', variable: 'ENV_FILE')]) {
-          sh "cp \$ENV_FILE .env.production" // Copy secret file ke workspace
-          sh "docker build -t $REGISTRY/$IMAGE:$TAG ."
-        }
+        // Menggunakan buildx untuk memastikan arsitektur tepat
+        sh '''
+        
+          docker buildx build \
+            --platform linux/amd64 \
+            -t $REGISTRY/$IMAGE:$TAG \
+            --push \
+            .
+        '''
       }
     }
 
@@ -64,6 +69,7 @@ pipeline {
   post {
     always {
       sh 'docker logout || true'
+      sh 'rm -f .env.production || true'
     }
     success {
       echo "✅ Deploy web sukses dengan tag ${TAG}"
