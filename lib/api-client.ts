@@ -43,6 +43,7 @@ export class ApiClient {
     if (body && !isFormData(body)) {
       headers.set('Content-Type', 'application/json')
     }
+    // test
 
     const token =
       typeof window !== 'undefined'
