@@ -3,6 +3,12 @@ FROM node:20 AS builder
 
 WORKDIR /app
 
+# build argument dari docker build
+ARG NEXT_PUBLIC_API_URL
+
+# expose sebagai env supaya Next.js bisa baca saat build
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Copy dependency manifests
 COPY package*.json ./
 
@@ -23,6 +29,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+
+RUN echo "API URL = $NEXT_PUBLIC_API_URL"
 
 # Copy only the build output and required files
 COPY --from=builder /app/package*.json ./

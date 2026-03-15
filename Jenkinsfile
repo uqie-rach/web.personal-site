@@ -8,6 +8,8 @@ pipeline {
     COMPOSE_PATH = "/home/uqie/apps/personal-site"
     DOCKERHUB_CREDS = "2d3f7809-6994-4ef0-a9ad-8dafe2e7cd7b"
     VPS_HOST = "43.133.58.35"
+    NEXT_PUBLIC_API_URL = "https://api.uqie.my.id/api/v1"
+
   }
 
   stages {
@@ -31,10 +33,9 @@ pipeline {
         sh '''
         
           docker buildx build \
-            --platform linux/amd64 \
+            --build-arg NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
             -t $REGISTRY/$IMAGE:$TAG \
-            --push \
-            .
+            --push .
         '''
       }
     }
@@ -46,9 +47,9 @@ pipeline {
             ssh -o StrictHostKeyChecking=no uqie@$VPS_HOST '
               cd $COMPOSE_PATH &&
               
-              # 1. Update WEB_TAG di file .env agar state tersimpan permanen
-              # Jika WEB_TAG belum ada, command ini tidak akan error jika file .env ada
-              sed -i "s/^WEB_TAG=.*/WEB_TAG=$TAG/" .env || echo "WEB_TAG=$TAG" >> .env
+              # 1. Update WEB_TAG di file .env.prod agar state tersimpan permanen
+              # Jika WEB_TAG belum ada, command ini tidak akan error jika file .env.prod ada
+              sed -i "s/^WEB_TAG=.*/WEB_TAG=$TAG/" .env.prod || echo "WEB_TAG=$TAG" >> .env.prod
               
               # 2. Pull image terbaru yang baru saja di-push
               docker pull $REGISTRY/$IMAGE:$TAG &&
