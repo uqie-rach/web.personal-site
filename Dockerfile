@@ -15,6 +15,11 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install --legacy-peer-deps
 
+RUN echo "API URL = $NEXT_PUBLIC_API_URL"
+
+# Copy source code
+COPY . .
+
 # Build the app
 RUN npm run build
 
@@ -25,8 +30,6 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
-
-RUN echo "API URL = $NEXT_PUBLIC_API_URL"
 
 # Copy only the build output and required files
 COPY --from=builder /app/package*.json ./
